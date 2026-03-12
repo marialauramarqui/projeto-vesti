@@ -1,19 +1,20 @@
+
 name: Atualizar Dashboard Vesti
 
 on:
   schedule:
-    - cron: '0 8 * * *' # Roda todos os dias às 08:00 AM UTC
-  workflow_dispatch: # Permite que você rode manualmente clicando num botão
+    - cron: '0 11 * * *' # Roda às 08:00 no horário de Brasília (11:00 UTC)
+  workflow_dispatch:      # Permite rodar manualmente com um botão
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v3
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
@@ -29,5 +30,5 @@ jobs:
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
           git add dados_dashboard.json
-          git commit -m "Automação: Atualizando dados do dashboard"
-          git push
+          # Só faz commit e push se houver alterações reais no arquivo JSON
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automação: Atualizand
