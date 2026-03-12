@@ -106,7 +106,7 @@ def exportar_para_web(vendas, serie_mensal, previsao, rfm, vendedores):
         "serie_historica": serie_mensal.to_dict(orient='records'),
         "previsao": previsao.to_dict(orient='records')
     }
-    with open(os.path.join(BASE_DIR, "dados_dashboard.json"), "w", encoding="utf-8") as f:
+    with open("dados_dashboard.json", "w", encoding="utf-8") as f:
         json.dump(dados_dashboard, f, ensure_ascii=False, indent=4)
     log.info("JSON para Dashboard gerado.")
 

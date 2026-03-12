@@ -28,14 +28,4 @@ Thumbs.db
 .claude/settings.local.json
 .aiox/install-log.txt
 
-# Data files (large, not versioned)
-*.csv
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!*.config.json
-pedido_ecom.json
-clientes_crm.csv
-pedido_erp.csv
-*.pdf
+

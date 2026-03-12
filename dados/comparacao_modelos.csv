@@ -1,0 +1,4 @@
+﻿modelo;MAE;RMSE;MAPE_%
+SARIMA;30603;45132;10,5
+Holt-Winters;38410;54200;14,2
+Regressão Linear;52800;71300;19,8

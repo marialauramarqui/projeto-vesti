@@ -24,7 +24,9 @@ O dashboard foi pensado pra 4 personas: o CEO que precisa de visao macro, o Mark
 
 As bibliotecas que usei: pandas pra manipulacao de dados, numpy pra calculos, statsmodels pros modelos de serie temporal (SARIMA e Holt-Winters) e scikit-learn pra regressao linear e metricas.
 
-**Power BI pro dashboard** - alem de ser o mais usado no mercado brasileiro, ele tem suporte nativo a relacionamentos entre tabelas, o que facilita montar o Star Schema. Os filtros interativos tambem ajudam bastante pra cada persona navegar na sua visao.
+**HTML hospedado no GitHub Pages pro dashboard** - optei por construir o dashboard em HTML puro com Chart.js, hospedado diretamente no GitHub Pages. Essa escolha traz algumas vantagens: o dashboard fica acessivel por qualquer navegador sem precisar instalar nada, funciona em qualquer dispositivo (desktop, tablet, celular), e o deploy e automatico — basta dar push no repositorio que o GitHub Pages ja publica a versao atualizada. Alem disso, nao depende de licenca de software como o Power BI, o que facilita o compartilhamento com qualquer stakeholder.
+
+**Automacao com GitHub Actions** - criei um workflow de CI/CD (`.github/workflows/main.yml`) que roda automaticamente todos os dias as 08:00 no horario de Brasilia. O workflow faz o seguinte: instala o Python e as dependencias, executa o `pipeline.py` (que trata os dados, recalcula o RFM, retreina o modelo SARIMA e exporta o JSON atualizado), e se houver mudancas no `dados_dashboard.json`, faz commit e push automaticamente. Tambem pode ser disparado manualmente pelo botao "Run workflow" no GitHub. Isso garante que o dashboard esteja sempre com os dados do dia sem nenhuma intervencao manual.
 
 **Star Schema como modelo de dados** - optei por separar em tabela fato (vendas) e dimensoes (clientes, vendedores, tempo). Assim o dashboard fica mais rapido e se precisar adicionar uma dimensao nova no futuro (tipo produtos), e so criar o CSV e relacionar. Nao precisa mexer na fato.
 
@@ -53,7 +55,7 @@ Essa foi a parte que mais deu trabalho. Cada fonte tinha seus problemas.
 
 ## Features que criei
 
-**Temporais** - extrair da data do pedido o ano, mes, trimestre, dia da semana e a combinacao ano_mes. Sao esses campos que alimentam os filtros e eixos dos graficos no Power BI.
+**Temporais** - extrair da data do pedido o ano, mes, trimestre, dia da semana e a combinacao ano_mes. Sao esses campos que alimentam os filtros e eixos dos graficos no dashboard.
 
 **Faixa de valor** - categorizei os pedidos em 6 faixas (ate R$200, R$201-500, R$501-1000, R$1001-2000, R$2001-5000, acima de R$5000). Isso ajuda a entender a distribuicao do ticket. O resultado: 64% dos pedidos ficam entre R$501 e R$2.000, que e o core do negocio.
 
@@ -99,7 +101,7 @@ Faz sentido: dezembro tem menos pedidos mas ticket mais alto (presente de fim de
 
 ---
 
-## Arquitetura dos dados no Power BI
+## Arquitetura dos dados
 
 Organizei num Star Schema simples:
 
@@ -114,7 +116,7 @@ PK: vendedor  ---------- | ---------- PK: ano_mes
                     FK: documento, vendedor, ano_mes
 ```
 
-Os relacionamentos sao todos N:1 da fato pras dimensoes. Exportei 7 CSVs pra pasta `data_powerbi/`:
+Os relacionamentos sao todos N:1 da fato pras dimensoes. O pipeline exporta os dados tratados em formato JSON (`dados_dashboard.json`), que e consumido diretamente pelo HTML do dashboard. Tambem sao gerados 7 CSVs na pasta `data_powerbi/`:
 
 - `fato_vendas.csv` - todos os pedidos (ERP + E-commerce), ja com features temporais
 - `dim_clientes.csv` - cadastro de clientes com RFM e segmento
@@ -123,6 +125,53 @@ Os relacionamentos sao todos N:1 da fato pras dimensoes. Exportei 7 CSVs pra pas
 - `serie_historico_previsao.csv` - historico + previsao no mesmo formato (pra fazer o grafico de real vs previsto)
 - `previsao_proximos_meses.csv` - previsao detalhada dos 3 meses
 - `comparacao_modelos.csv` - metricas de cada modelo testado
+
+---
+
+## Design e UX do dashboard
+
+O dashboard foi construido em HTML com a biblioteca Chart.js e segue um design system coeso pensado para facilitar a leitura e navegacao.
+
+### Identidade visual
+
+- **Tema escuro** com fundo em tons de roxo profundo (`#0F0820`, `#1A0D35`) que reduz fadiga visual e destaca os dados
+- **Paleta de cores** consistente: teal (`#00C9A7`) como cor primaria de destaque, roxo (`#6B3FA0`) como secundaria, laranja (`#FFB347`) para alertas e previsoes, vermelho (`#FF5A7E`) para indicadores negativos
+- **Tipografia** em Segoe UI/system-ui, garantindo boa legibilidade em qualquer sistema operacional
+
+### Estrutura de navegacao
+
+O layout segue o padrao de aplicacao web moderna com **sidebar fixa a esquerda** + **area de conteudo a direita**:
+
+- **Sidebar (220px):** logo da Vesti no topo, menu de navegacao com 5 paginas e footer com identificacao. Os itens de menu tem efeito hover com destaque teal e o item ativo recebe um gradiente sutil
+- **Header:** titulo da pagina atual com indicador "Ao Vivo" (dot pulsante) para reforcar que os dados sao atualizados automaticamente
+- **Conteudo:** scroll vertical com cards organizados em grids responsivos
+
+### Paginas e personas
+
+O dashboard tem **5 paginas**, cada uma pensada para um perfil de usuario:
+
+**1. Visao CEO** - Pagina inicial com 5 KPI cards no topo (receita total, pedidos, ticket medio, clientes ativos, variacao MoM), grafico de linha de receita mensal real vs previsao SARIMA, cards de previsao dos proximos 3 meses com intervalo de confianca, receita por trimestre agrupada por ano e receita por canal.
+
+**2. Marketing** - 4 KPI cards (total clientes, VIP, em risco, % omnichannel), grafico donut de segmentacao RFM com 7 segmentos, receita por canal em barras horizontais, distribuicao de faixa de valor dos pedidos, uso de cupom (sem cupom, frete gratis, desconto, cashback, parceiro) e tabela dos top 10 clientes com detalhes de RFM.
+
+**3. Performance** - 4 KPI cards (vendedores ativos, receita total, ticket medio, top vendedora), ranking de vendedores por receita em barras horizontais, grafico de dispersao pedidos x ticket (tamanho do ponto = receita total), evolucao mensal das top 5 vendedoras em grafico de linhas e tabela completa com todas as 20 vendedoras.
+
+**4. Vendedor** - Pagina personalizada com **slicer de vendedoras** no topo (botoes pill para selecionar o nome). Ao clicar, exibe: perfil com avatar, nome, posicao no ranking, 4 KPI cards individuais (minhas vendas, meus pedidos, meu ticket medio, meus clientes), grafico de evolucao mensal, comparacao com media da equipe (gauge visual) e lista dos top clientes daquele vendedor.
+
+**5. Modelo SARIMA** - Pagina dedicada ao modelo preditivo com 4 KPI cards (MAPE, MAE, RMSE, modelo selecionado), grafico de serie historica completa + previsao com ponto de conexao, cards de previsao dos 3 meses, tabela comparativa dos 3 modelos testados e grafico de barras de MAPE por modelo.
+
+### Componentes visuais
+
+- **KPI cards** com barra de acento colorida no topo, icone, valor em destaque e label. Efeito hover com elevacao sutil
+- **Cards de previsao** com mes, valor previsto em teal, intervalo min-max e quantidade de pedidos em laranja
+- **Tabelas** com header em fundo teal translucido, hover nas linhas e badges coloridos para segmentos RFM
+- **Graficos** configurados com tooltips customizados (fundo escuro, borda teal), grid sutil e formatacao em BRL
+- **Slicer de vendedoras** com botoes arredondados (pill buttons), estado ativo em teal com animacao de transicao
+- **Gauge visual** para comparacao vendedor vs media, com barra de progresso gradiente
+
+### Responsividade
+
+O layout usa CSS Grid com breakpoint em 1200px — a grade de 5 KPI cards reorganiza para 3 colunas em telas menores. Tabelas tem scroll horizontal quando necessario.
 
 ---
 
@@ -155,16 +204,21 @@ Alguns destaques do que encontrei durante a analise:
 
 ## Como manter atualizado
 
-O fluxo e simples:
+O dashboard e atualizado automaticamente via **GitHub Actions**. O workflow (`.github/workflows/main.yml`) roda todos os dias as 08:00 no horario de Brasilia e executa o seguinte fluxo:
 
-1. Exportar os dados novos do ERP, E-commerce e CRM nos mesmos formatos (CSV e JSON)
-2. Substituir os arquivos na pasta do projeto
-3. Rodar o script Python (`python pipeline.py`) - ele faz tudo: trata, calcula RFM, treina o modelo e exporta os CSVs
-4. No Power BI, clicar em "Atualizar Dados" (Ctrl+F5)
+1. Faz checkout do repositorio
+2. Configura o Python 3.9 e instala as dependencias (pandas, numpy, statsmodels, scikit-learn)
+3. Roda o `pipeline.py` que trata os dados, recalcula o RFM, retreina o SARIMA e exporta o `dados_dashboard.json`
+4. Se houver mudancas no JSON, faz commit e push automaticamente
+5. O GitHub Pages publica a versao atualizada do dashboard
 
-Tambem criei um `pipeline.py` que pode ser agendado no Task Scheduler do Windows pra rodar automaticamente. O notebook `tratamento_analise.ipynb` continua disponivel pra quem preferir rodar celula por celula e ver os outputs.
+Tambem e possivel disparar o workflow manualmente pelo botao "Run workflow" na interface do GitHub.
+
+Para adicionar dados novos, basta atualizar os arquivos fonte (`pedido_erp.csv`, `pedido_ecom.json`, `clientes_crm.csv`) no repositorio — a automacao cuida do resto.
 
 O modelo SARIMA e retreinado toda vez que o pipeline roda, entao ele vai se ajustando com os dados novos. Se em algum momento o MAPE passar de 20%, vale revisar os parametros ou considerar outro modelo.
+
+O notebook `tratamento_analise.ipynb` continua disponivel pra quem preferir rodar celula por celula e ver os outputs.
 
 ---
 
@@ -173,7 +227,7 @@ O modelo SARIMA e retreinado toda vez que o pipeline roda, entao ele vai se ajus
 O Star Schema facilita bastante a evolucao:
 
 - Precisa de uma dimensao de produtos? Cria um `dim_produtos.csv`, relaciona por SKU e pronto
-- Quer novas metricas? Adiciona medidas DAX no Power BI sem mexer nos dados
+- Quer novas metricas? Adiciona novas visualizacoes no HTML ou medidas no pipeline sem mexer nos dados
 - Nova fonte de dados (marketplace, por exemplo)? Trata em Python seguindo o mesmo padrao e concatena na fato
 
 O notebook tambem e extensivel - da pra adicionar celulas novas sem quebrar as existentes. E o modelo preditivo pode evoluir pra incluir variaveis externas (tipo datas comerciais) ou previsoes por canal/vendedor separadamente.
@@ -184,10 +238,12 @@ O notebook tambem e extensivel - da pra adicionar celulas novas sem quebrar as e
 
 ```
 projeto-vesti/
-├── tratamento_analise.ipynb    # Notebook com todo o tratamento + modelo
-├── pipeline.py                 # Script pra automacao (mesma logica do notebook)
-├── run_pipeline.bat            # Wrapper pra agendar no Task Scheduler
-├── data_powerbi/               # CSVs exportados pro Power BI
+├── dashboard_desafio.html         # Dashboard HTML (GitHub Pages)
+├── tratamento_analise.ipynb       # Notebook com todo o tratamento + modelo
+├── pipeline.py                    # Script pra automacao (mesma logica do notebook)
+├── run_pipeline.bat               # Wrapper pra agendar no Task Scheduler
+├── dados_dashboard.json           # JSON com dados agregados (gerado pelo pipeline)
+├── data_powerbi/                  # CSVs exportados
 │   ├── fato_vendas.csv
 │   ├── dim_clientes.csv
 │   ├── dim_vendedores.csv
@@ -195,13 +251,16 @@ projeto-vesti/
 │   ├── serie_historico_previsao.csv
 │   ├── previsao_proximos_meses.csv
 │   └── comparacao_modelos.csv
+├── .github/
+│   └── workflows/
+│       └── main.yml               # GitHub Actions — automacao diaria
 ├── docs/
 │   └── documentacao-tecnica.md
-├── logs/                       # Logs do pipeline automatizado
-├── pedido_erp.csv              # Dados brutos (nao versionados)
-├── pedido_ecom.json            # Dados brutos (nao versionados)
-├── clientes_crm.csv            # Dados brutos (nao versionados)
-└── desafio.pdf                 # Briefing do desafio
+├── logs/                          # Logs do pipeline automatizado
+├── pedido_erp.csv                 # Dados brutos (nao versionados)
+├── pedido_ecom.json               # Dados brutos (nao versionados)
+├── clientes_crm.csv               # Dados brutos (nao versionados)
+└── desafio.pdf                    # Briefing do desafio
 ```
 
 ---
@@ -210,10 +269,10 @@ projeto-vesti/
 
 | # | Criterio | Onde ta |
 |---|----------|---------|
-| 1 | Plataforma e modelagem | Power BI com Star Schema |
+| 1 | Plataforma e modelagem | HTML + Chart.js com Star Schema, hospedado no GitHub Pages |
 | 2 | Indicadores | KPIs por persona, RFM, previsao SARIMA |
 | 3 | Insights | 8 insights acionaveis ao longo do documento |
-| 4 | Sustentacao | Pipeline automatizavel, fluxo de atualizacao definido |
-| 5 | Escalabilidade | Star Schema extensivel, notebook modular |
-| 6 | Personalizacao | 4 visoes (CEO, Marketing, Gerente, Vendedor) |
+| 4 | Sustentacao | GitHub Actions com automacao diaria + pipeline Python |
+| 5 | Escalabilidade | Star Schema extensivel, notebook modular, HTML componentizado |
+| 6 | Personalizacao | 5 visoes (CEO, Marketing, Performance, Vendedor, Modelo SARIMA) |
 | 7 | Documentacao | Este documento |
