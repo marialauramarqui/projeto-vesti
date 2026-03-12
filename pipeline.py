@@ -7,6 +7,8 @@ Executa tratamento, modelo preditivo e exporta CSVs + JSON para o dashboard.
 import pandas as pd
 import numpy as np
 import gzip
+import json
+import requests
 import warnings
 import os
 import sys
@@ -38,18 +40,23 @@ log = logging.getLogger("vesti-pipeline")
 
 # --- FUNÇÕES DE TRATAMENTO ---
 
+def carregar_dados_da_nuvem():
+    # Link corrigido para download direto
+    url = "https://drive.google.com/uc?export=download&id=1zSIbxBTPaK9eVR8Oe4n2vz3bECpt0lCK"
+    response = requests.get(url)
+    
+    # O gzip.open precisa de bytes, usamos io.BytesIO para transformar o conteúdo da resposta
+    with gzip.open(io.BytesIO(response.content), 'rt', encoding='utf-8') as f:
+        ecom_json = json.load(f)
+    
+    return pd.json_normalize(ecom_json["docs"])
+
 def carregar_dados():
     log.info("Carregando dados brutos...")
     erp_raw = pd.read_csv(os.path.join(BASE_DIR, "pedido_erp.csv"), sep=";", quotechar='"')
     crm_raw = pd.read_csv(os.path.join(BASE_DIR, "clientes_crm.csv"), sep=";")
     
-    # Lendo o arquivo compactado (GZIP)
-    caminho_ecom = os.path.join(BASE_DIR, "pedido_ecom.json.gz")
-    with gzip.open(caminho_ecom, 'rt', encoding='utf-8') as f:
-        ecom_json = json.load(f)
-        
-    ecom_raw = pd.json_normalize(ecom_json["docs"])
-    return erp_raw, ecom_raw, crm_raw
+
 
 def tratar_erp(erp_raw):
     erp = erp_raw.rename(columns={"id": "id_pedido", "number": "numero_pedido", "customer_document": "documento", "seller_name": "vendedor", "order_value": "valor_pedido", "order_created": "data_pedido"})
