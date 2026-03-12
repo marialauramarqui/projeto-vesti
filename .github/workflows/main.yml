@@ -22,22 +22,19 @@ jobs:
         run: |
           pip install pandas numpy statsmodels scikit-learn
 
-      - name: Rodar Pipeline
-        run: python pipeline.py
-
-      - name: Enviar mudanças de volta ao repositório
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Rodar Pipeline e Debugar
         run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
+          echo "--- Listando arquivos ANTES de rodar o pipeline ---"
+          ls -la
           
-          # Adiciona o arquivo diretamente
-          git add dados_dashboard.json
+          python pipeline.py
           
-          if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "Automação: Atualizando dados do dashboard"
-            git push origin HEAD:main
+          echo "--- Listando arquivos DEPOIS de rodar o pipeline ---"
+          ls -la
+          
+          echo "--- Verificando se o arquivo existe ---"
+          if [ -f "dados_dashboard.json" ]; then
+            echo "SUCESSO: Arquivo encontrado!"
           else
-            echo "Nenhuma mudança para commitar."
+            echo "ERRO: O arquivo dados_dashboard.json NÃO foi criado pelo pipeline."
           fi
