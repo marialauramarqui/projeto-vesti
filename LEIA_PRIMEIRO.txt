@@ -1,0 +1,30 @@
+COMO ABRIR O DASHBOARD VESTI NO POWER BI
+=========================================
+
+1. Extraia este ZIP em uma pasta (ex: C:\Vesti\)
+2. Abra o Power BI Desktop
+3. Clique em: Arquivo → Importar → Modelo do Power BI (.pbit)
+4. Selecione: Vesti_Dashboard.pbit
+
+5. Quando pedir os parâmetros de caminho, aponte para a pasta /dados/ extraída
+   (ou use o botão Transformar Dados → Fonte para ajustar o caminho dos CSVs)
+
+6. Clique em Atualizar — os dados carregam automaticamente
+
+PÁGINAS DO DASHBOARD:
+  • CEO           — KPIs, linha histórico+previsão, trimestres, canais
+  • Marketing     — RFM, segmentação, omnichannel, top clientes
+  • Performance   — Ranking vendedores, scatter, evolução top 5
+  • Vendedor      — Slicer individual, gauge vs média, meus clientes
+  • Modelo SARIMA — Série histórica, comparação modelos, previsão
+
+MEDIDAS DAX INCLUÍDAS (13):
+  Receita Total, Qtd Pedidos, Ticket Medio, Clientes Ativos,
+  Clientes VIP, Clientes Em Risco, Pct Omnichannel, Variacao MoM,
+  Receita Prevista, Meu Ranking, Vendedores Ativos, Media Equipe,
+  Receita Acumulada
+
+RELACIONAMENTOS:
+  fato_vendas[documento]  → dim_clientes[documento]
+  fato_vendas[vendedor]   → dim_vendedores[vendedor]
+  fato_vendas[ano_mes]    → serie_temporal[ano_mes]

@@ -1,0 +1,103 @@
+// ============================================================
+// MEDIDAS DAX — DASHBOARD VESTI
+// Criar tabela: Modelagem → Nova Tabela → Medidas = {0}
+// Depois adicionar cada medida abaixo dentro dessa tabela
+// ============================================================
+
+// ── MEDIDAS BÁSICAS ─────────────────────────────────────────
+
+Receita Total =
+SUM(fato_vendas[valor_pedido])
+
+Qtd Pedidos =
+COUNTROWS(fato_vendas)
+
+Ticket Medio =
+DIVIDE([Receita Total], [Qtd Pedidos], 0)
+
+Clientes Ativos =
+DISTINCTCOUNT(fato_vendas[documento])
+
+// ── MEDIDAS TEMPORAIS ────────────────────────────────────────
+
+Receita Mes Anterior =
+CALCULATE(
+    [Receita Total],
+    DATEADD(serie_temporal[ano_mes_dt], -1, MONTH)
+)
+
+Variacao MoM =
+DIVIDE(
+    [Receita Total] - [Receita Mes Anterior],
+    [Receita Mes Anterior],
+    0
+)
+
+Variacao MoM % =
+FORMAT([Variacao MoM], "+0.0%;-0.0%;0.0%")
+
+Receita Acumulada Ano =
+CALCULATE(
+    [Receita Total],
+    DATESYTD(serie_temporal[ano_mes_dt])
+)
+
+// ── MEDIDAS DE SEGMENTAÇÃO ───────────────────────────────────
+
+Clientes VIP =
+CALCULATE(
+    DISTINCTCOUNT(dim_clientes[documento]),
+    dim_clientes[segmento] = "VIP"
+)
+
+Clientes Em Risco =
+CALCULATE(
+    DISTINCTCOUNT(dim_clientes[documento]),
+    dim_clientes[segmento] IN {"Em Risco", "Perdendo VIP"}
+)
+
+Pct Omnichannel =
+DIVIDE(
+    CALCULATE(
+        DISTINCTCOUNT(dim_clientes[documento]),
+        dim_clientes[omnichannel] = TRUE()
+    ),
+    DISTINCTCOUNT(dim_clientes[documento]),
+    0
+)
+
+// ── MEDIDAS DE PREVISÃO ──────────────────────────────────────
+
+Receita Prevista =
+SUM(previsao_proximos_meses[receita_prevista])
+
+MAPE Modelo =
+CALCULATE(
+    MIN(comparacao_modelos[MAPE_%]),
+    comparacao_modelos[modelo] = "SARIMA"
+)
+
+// ── MEDIDAS DE RANKING (PÁGINA VENDEDOR) ─────────────────────
+
+Meu Ranking =
+RANKX(
+    ALL(dim_vendedores[vendedor]),
+    CALCULATE([Receita Total]),
+    ,
+    DESC,
+    Dense
+)
+
+Media Equipe =
+DIVIDE(
+    CALCULATE([Receita Total], ALL(fato_vendas[vendedor])),
+    CALCULATE(DISTINCTCOUNT(fato_vendas[vendedor]), ALL(fato_vendas[vendedor])),
+    0
+)
+
+Vendedores Ativos =
+DISTINCTCOUNT(dim_vendedores[vendedor])
+
+// ── CORES CONDICIONAIS (usar em formatação condicional) ───────
+// Cor MoM = IF([Variacao MoM] >= 0, "#00C9A7", "#E53E3E")
+// Para aplicar: Visual → Formatação condicional → Por regras de campo

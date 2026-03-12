@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia Power BI — Vesti Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+  
+  :root {
+    --purple: #4A1E6B;
+    --purple-mid: #6B3FA0;
+    --purple-pale: #2D1145;
+    --teal: #00C9A7;
+    --teal-dark: #009F85;
+    --bg: #0F0820;
+    --card: #1E0D35;
+    --border: rgba(0,201,167,0.2);
+    --text: #E8DFF5;
+    --muted: #9B8AB8;
+  }
+  
+  * { margin:0; padding:0; box-sizing:border-box; }
+  
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0F0820 0%, #1a0a35 50%, #0d1a1a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 64px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0,201,167,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 30%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(107,63,160,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(0,201,167,0.1);
+    border: 1px solid var(--teal);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: var(--teal);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .hero-badge span { width:6px; height:6px; background:var(--teal); border-radius:50%; display:inline-block; }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .hero h1 em { color: var(--teal); font-style: normal; }
+  .hero p {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 520px;
+    font-weight: 300;
+  }
+  .hero-stats {
+    display: flex; gap: 40px;
+    margin-top: 32px;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat-val { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; color:var(--teal); }
+  .stat-lbl { font-size:12px; color:var(--muted); letter-spacing:0.05em; }
+
+  /* LAYOUT */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+  .content { padding: 48px 64px; }
+  
+  /* SECTION */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 28px;
+  }
+  .step-num {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:18px;
+    color: #0F0820;
+    flex-shrink: 0;
+  }
+  .section-header h2 {
+    font-family:'Syne',sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section-header p { font-size:13px; color:var(--muted); margin-top:2px; }
+
+  /* CARDS GRID */
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .file-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .file-card:hover { border-color: var(--teal); }
+  .file-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--purple-mid));
+  }
+  .file-name {
+    font-family: 'DM Sans', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .file-name::before { content: '📄'; font-size: 14px; }
+  .file-desc { font-size: 13px; color: var(--muted); }
+  .file-badge {
+    display: inline-block;
+    background: rgba(0,201,167,0.12);
+    color: var(--teal);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    background: rgba(0,201,167,0.08);
+    color: var(--teal);
+    font-weight: 600;
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .data-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  code {
+    font-family: 'DM Sans', monospace;
+    background: rgba(0,201,167,0.1);
+    color: var(--teal);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 12px;
+  }
+  
+  /* DAX BLOCK */
+  .dax-block {
+    background: #0a0518;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 10px 10px 0;
+    padding: 20px 24px;
+    margin: 12px 0;
+    font-family: 'DM Sans', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .dax-comment { color: #5a7a6a; font-style: italic; }
+  .dax-keyword { color: #7B9FFF; font-weight: 600; }
+  .dax-func { color: #FFB347; }
+  .dax-name { color: #00C9A7; }
+  .dax-string { color: #F0A0A0; }
+  .dax-label {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px;
+  }
+  .dax-label span {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .dax-label small { color: var(--muted); font-size:11px; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 16px; }
+  .step-item {
+    display: flex; gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    align-items: flex-start;
+  }
+  .step-circle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    color: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne',sans-serif; font-weight: 700; font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body h4 { font-size:15px; font-weight:600; margin-bottom:4px; color:var(--text); }
+  .step-body p { font-size:13px; color:var(--muted); }
+  .step-body .tip {
+    display:inline-flex; align-items:center; gap:6px;
+    background: rgba(0,201,167,0.08);
+    border: 1px solid rgba(0,201,167,0.2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px; color:var(--teal);
+    margin-top: 8px;
+  }
+
+  /* PAGE CARDS */
+  .page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .page-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-card::after {
+    content: attr(data-num);
+    position: absolute;
+    right: 20px; bottom: 16px;
+    font-family: 'Syne',sans-serif;
+    font-size: 64px; font-weight: 800;
+    color: rgba(255,255,255,0.03);
+    line-height: 1;
+  }
+  .page-pill {
+    display: inline-block;
+    background: rgba(0,201,167,0.1);
+    border: 1px solid rgba(0,201,167,0.3);
+    color: var(--teal);
+    border-radius: 100px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .page-card h3 {
+    font-family:'Syne',sans-serif;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .visual-list { list-style: none; display:flex; flex-direction:column; gap:6px; }
+  .visual-list li {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--muted);
+  }
+  .visual-list li::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+  .visual-list li strong { color: var(--text); font-weight: 500; }
+
+  /* RELATIONSHIP */
+  .rel-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .rel-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .rel-row:last-child { border-bottom: none; }
+  .rel-table {
+    background: rgba(107,63,160,0.2);
+    border: 1px solid var(--purple-mid);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #C8A8F0;
+    font-weight: 500;
+  }
+  .rel-arrow {
+    color: var(--teal);
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px;
+  }
+  .rel-desc { font-size: 12px; color: var(--muted); }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .footer strong { color: var(--teal); }
+
+  /* CHECKLIST */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  .check-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(0,201,167,0.15);
+    border: 1.5px solid var(--teal);
+    flex-shrink: 0;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge"><span></span> Power BI · Dashboard Vesti</div>
+  <h1>Guia de Configuração<br><em>Dashboard Completo</em></h1>
+  <p>Passo a passo para importar os dados, criar relacionamentos, medidas DAX e montar as 4 páginas do dashboard.</p>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-val">7</span><span class="stat-lbl">Tabelas CSV</span></div>
+    <div class="stat"><span class="stat-val">15+</span><span class="stat-lbl">Medidas DAX</span></div>
+    <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">Páginas</span></div>
+    <div class="stat"><span class="stat-val">SARIMA</span><span class="stat-lbl">Modelo Preditivo</span></div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- STEP 1: ARQUIVOS -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">1</div>
+    <div>
+      <h2>Importar os Arquivos CSV</h2>
+      <p>Obter Dados → Texto/CSV → Separador: ponto e vírgula (;) · Codificação: UTF-8</p>
+    </div>
+  </div>
+  <div class="file-grid">
+    <div class="file-card">
+      <div class="file-name">fato_vendas.csv</div>
+      <div class="file-desc">Todos os pedidos (ERP + E-commerce). Tabela central do modelo.</div>
+      <div class="file-badge">FATO · 12 mil+ linhas</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">dim_clientes.csv</div>
+      <div class="file-desc">Clientes com segmentação RFM, score e flag omnichannel.</div>
+      <div class="file-badge">DIMENSÃO · 3.600 clientes</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">dim_vendedores.csv</div>
+      <div class="file-desc">Performance agregada por vendedor: receita, pedidos, ticket.</div>
+      <div class="file-badge">DIMENSÃO · 20 vendedores</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">serie_temporal.csv</div>
+      <div class="file-desc">Agregação mensal com variação MoM e médias móveis.</div>
+      <div class="file-badge">SÉRIE · 35 meses</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">serie_historico_previsao.csv</div>
+      <div class="file-desc">Histórico + previsão futura com campo "tipo" (Realizado/Previsto).</div>
+      <div class="file-badge">SÉRIE · Inclui 3 meses futuros</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">previsao_proximos_meses.csv</div>
+      <div class="file-desc">Previsão SARIMA: Dez/24, Jan/25, Fev/25 com intervalo de confiança.</div>
+      <div class="file-badge">PREVISÃO · 3 meses</div>
+    </div>
+    <div class="file-card">
+      <div class="file-name">comparacao_modelos.csv</div>
+      <div class="file-desc">Métricas dos 3 modelos testados: MAE, RMSE, MAPE.</div>
+      <div class="file-badge">MODELO · SARIMA vencedor</div>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:24px;">
+    <table class="data-table">
+      <thead><tr><th>Tabela</th><th>Coluna</th><th>Tipo no Power Query</th></tr></thead>
+      <tbody>
+        <tr><td>fato_vendas</td><td>valor_pedido</td><td>Número Decimal</td></tr>
+        <tr><td>fato_vendas</td><td>data_pedido</td><td>Data</td></tr>
+        <tr><td>fato_vendas</td><td>ano / mes</td><td>Número Inteiro</td></tr>
+        <tr><td>dim_clientes</td><td>monetario / ticket_medio</td><td>Número Decimal</td></tr>
+        <tr><td>dim_vendedores</td><td>total_vendas / ticket_medio</td><td>Número Decimal</td></tr>
+        <tr><td>serie_temporal</td><td>receita_total</td><td>Número Decimal</td></tr>
+        <tr><td>serie_temporal</td><td>ano_mes_dt</td><td>Data</td></tr>
+        <tr><td>serie_historico_previsao</td><td>ano_mes_dt / receita_total</td><td>Data / Decimal</td></tr>
+        <tr><td>comparacao_modelos</td><td>MAPE_%</td><td>Número Decimal</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- STEP 2: RELACIONAMENTOS -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">2</div>
+    <div>
+      <h2>Criar Relacionamentos</h2>
+      <p>Visualização Modelo → arrastar campos para conectar as tabelas</p>
+    </div>
+  </div>
+  <div class="rel-box">
+    <div class="rel-row">
+      <div class="rel-table">fato_vendas<br><small style="color:#9B8AB8">documento</small></div>
+      <div class="rel-arrow">──N:1──▶</div>
+      <div class="rel-table">dim_clientes<br><small style="color:#9B8AB8">documento</small></div>
+      <div class="rel-desc">Cardinalidade: Muitos para Um · Filtro: Único (dim filtra fato)</div>
+    </div>
+    <div class="rel-row">
+      <div class="rel-table">fato_vendas<br><small style="color:#9B8AB8">vendedor</small></div>
+      <div class="rel-arrow">──N:1──▶</div>
+      <div class="rel-table">dim_vendedores<br><small style="color:#9B8AB8">vendedor</small></div>
+      <div class="rel-desc">Cardinalidade: Muitos para Um · Filtro: Único</div>
+    </div>
+    <div class="rel-row">
+      <div class="rel-table">fato_vendas<br><small style="color:#9B8AB8">ano_mes</small></div>
+      <div class="rel-arrow">──N:1──▶</div>
+      <div class="rel-table">serie_temporal<br><small style="color:#9B8AB8">ano_mes</small></div>
+      <div class="rel-desc">Cardinalidade: Muitos para Um · Filtro: Único</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- STEP 3: DAX -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">3</div>
+    <div>
+      <h2>Medidas DAX</h2>
+      <p>Modelagem → Nova Tabela → digitar <code>Medidas = {0}</code> → adicionar cada medida abaixo</p>
+    </div>
+  </div>
+
+  <div class="dax-label"><span>Medidas Básicas</span></div>
+  <div class="dax-block">
+<span class="dax-name">Receita Total</span> = <span class="dax-func">SUM</span>(fato_vendas[valor_pedido])<br><br>
+<span class="dax-name">Qtd Pedidos</span> = <span class="dax-func">COUNTROWS</span>(fato_vendas)<br><br>
+<span class="dax-name">Ticket Medio</span> = <span class="dax-func">DIVIDE</span>([Receita Total], [Qtd Pedidos], 0)<br><br>
+<span class="dax-name">Clientes Ativos</span> = <span class="dax-func">DISTINCTCOUNT</span>(fato_vendas[documento])
+  </div>
+
+  <div class="dax-label" style="margin-top:20px"><span>Medidas Temporais</span></div>
+  <div class="dax-block">
+<span class="dax-name">Receita Mes Anterior</span> =<br>
+<span class="dax-func">CALCULATE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Receita Total],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">DATEADD</span>(serie_temporal[ano_mes_dt], -1, <span class="dax-keyword">MONTH</span>)<br>
+)<br><br>
+<span class="dax-name">Variacao MoM</span> =<br>
+<span class="dax-func">DIVIDE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Receita Total] - [Receita Mes Anterior],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Receita Mes Anterior], 0<br>
+)<br><br>
+<span class="dax-name">Receita Acumulada Ano</span> =<br>
+<span class="dax-func">CALCULATE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[Receita Total],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">DATESYTD</span>(serie_temporal[ano_mes_dt])<br>
+)
+  </div>
+
+  <div class="dax-label" style="margin-top:20px"><span>Segmentação e Clientes</span></div>
+  <div class="dax-block">
+<span class="dax-name">Clientes VIP</span> =<br>
+<span class="dax-func">CALCULATE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">DISTINCTCOUNT</span>(dim_clientes[documento]),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dim_clientes[segmento] = <span class="dax-string">"VIP"</span><br>
+)<br><br>
+<span class="dax-name">Clientes Em Risco</span> =<br>
+<span class="dax-func">CALCULATE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">DISTINCTCOUNT</span>(dim_clientes[documento]),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dim_clientes[segmento] <span class="dax-keyword">IN</span> {<span class="dax-string">"Em Risco"</span>, <span class="dax-string">"Perdendo VIP"</span>}<br>
+)<br><br>
+<span class="dax-name">Pct Omnichannel</span> =<br>
+<span class="dax-func">DIVIDE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">CALCULATE</span>(<span class="dax-func">DISTINCTCOUNT</span>(dim_clientes[documento]), dim_clientes[omnichannel] = <span class="dax-func">TRUE</span>()),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">DISTINCTCOUNT</span>(dim_clientes[documento]), 0<br>
+)
+  </div>
+
+  <div class="dax-label" style="margin-top:20px"><span>Ranking e Comparação (Página Vendedor)</span></div>
+  <div class="dax-block">
+<span class="dax-name">Meu Ranking</span> =<br>
+<span class="dax-func">RANKX</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">ALL</span>(dim_vendedores[vendedor]),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">CALCULATE</span>([Receita Total]),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;, <span class="dax-keyword">DESC</span>, Dense<br>
+)<br><br>
+<span class="dax-name">Media Equipe</span> =<br>
+<span class="dax-func">DIVIDE</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">CALCULATE</span>([Receita Total], <span class="dax-func">ALL</span>(fato_vendas[vendedor])),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="dax-func">CALCULATE</span>(<span class="dax-func">DISTINCTCOUNT</span>(fato_vendas[vendedor]), <span class="dax-func">ALL</span>(fato_vendas[vendedor])),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;0<br>
+)
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- STEP 4: PÁGINAS -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">4</div>
+    <div>
+      <h2>Montar as Páginas</h2>
+      <p>Criar 4 páginas no Power BI e adicionar os visuais conforme abaixo</p>
+    </div>
+  </div>
+  <div class="page-grid">
+    <div class="page-card" data-num="1">
+      <div class="page-pill">Página 1</div>
+      <h3>CEO — Visão Executiva</h3>
+      <ul class="visual-list">
+        <li><strong>5 Cartões:</strong> Receita Total, Qtd Pedidos, Ticket Médio, Clientes Ativos, Variação MoM</li>
+        <li><strong>Gráfico de Linhas:</strong> serie_historico_previsao → eixo: ano_mes_dt, valor: receita_total, legenda: tipo</li>
+        <li><strong>Gráfico de Barras:</strong> fato_vendas → eixo: trimestre, valor: [Receita Total]</li>
+        <li><strong>3 Cartões Previsão:</strong> previsao_proximos_meses → mes + receita_prevista</li>
+        <li><strong>Segmentação:</strong> fato_vendas[ano]</li>
+      </ul>
+    </div>
+    <div class="page-card" data-num="2">
+      <div class="page-pill">Página 2</div>
+      <h3>Marketing — Clientes e Canais</h3>
+      <ul class="visual-list">
+        <li><strong>4 Cartões:</strong> Clientes Ativos, Clientes VIP, Clientes Em Risco, % Omnichannel</li>
+        <li><strong>Rosca:</strong> dim_clientes → legenda: segmento, valor: COUNT(documento)</li>
+        <li><strong>Barras Horizontais:</strong> fato_vendas → eixo: canal, valor: [Receita Total]</li>
+        <li><strong>Treemap:</strong> fato_vendas → categoria: faixa_valor, tamanho: [Qtd Pedidos]</li>
+        <li><strong>Tabela:</strong> dim_clientes → nome, segmento, frequencia, monetario, ticket_medio</li>
+      </ul>
+    </div>
+    <div class="page-card" data-num="3">
+      <div class="page-pill">Página 3</div>
+      <h3>Performance — Gerente de Loja</h3>
+      <ul class="visual-list">
+        <li><strong>4 Cartões:</strong> Vendedores Ativos, Receita Total, Ticket Médio, Top Vendedor</li>
+        <li><strong>Barras Horizontais:</strong> dim_vendedores → eixo: vendedor, valor: total_vendas (ordenar desc)</li>
+        <li><strong>Dispersão:</strong> dim_vendedores → X: qtd_pedidos, Y: ticket_medio, tamanho: total_vendas</li>
+        <li><strong>Tabela:</strong> dim_vendedores → todas as colunas com formatação condicional</li>
+        <li><strong>Linhas Top 5:</strong> fato_vendas → eixo: ano_mes, valor: [Receita Total], legenda: vendedor</li>
+      </ul>
+    </div>
+    <div class="page-card" data-num="4">
+      <div class="page-pill">Página 4</div>
+      <h3>Vendedor — Meus Resultados</h3>
+      <ul class="visual-list">
+        <li><strong>Segmentação:</strong> fato_vendas[vendedor] — filtra toda a página</li>
+        <li><strong>4 Cartões:</strong> [Receita Total], [Clientes Ativos], [Ticket Médio], [Meu Ranking]</li>
+        <li><strong>Linhas:</strong> fato_vendas → eixo: ano_mes, valor: [Receita Total]</li>
+        <li><strong>Rosca:</strong> dim_clientes → legenda: segmento (filtrado pelo vendedor)</li>
+        <li><strong>Tabela Top 10:</strong> clientes do vendedor selecionado</li>
+        <li><strong>Gauge:</strong> [Receita Total] vs [Media Equipe]</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- STEP 5: DICAS -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">5</div>
+    <div>
+      <h2>Dicas Importantes</h2>
+      <p>Configurações que fazem diferença no resultado final</p>
+    </div>
+  </div>
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-circle">A</div>
+      <div class="step-body">
+        <h4>Gráfico de Linhas — desativar hierarquia de datas</h4>
+        <p>No campo <code>ano_mes_dt</code>, clicar na seta ao lado do campo no eixo X e selecionar <strong>"ano_mes_dt"</strong> diretamente (não "Hierarquia de datas"). Isso garante que cada mês apareça individualmente.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-circle">B</div>
+      <div class="step-body">
+        <h4>Formatação Condicional — Variação MoM</h4>
+        <p>No cartão de Variação MoM: Formatar → Cor do valor → Por regras: se valor ≥ 0 → cor <code>#00C9A7</code> (teal), se valor &lt; 0 → cor <code>#E53E3E</code> (vermelho).</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-circle">C</div>
+      <div class="step-body">
+        <h4>Sync Slicers — filtros sincronizados</h4>
+        <p>Para que o filtro de Ano funcione em todas as páginas: Exibir → Sincronizar segmentações de dados → marcar todas as páginas para o segmentador de Ano.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-circle">D</div>
+      <div class="step-body">
+        <h4>Cores do tema</h4>
+        <p>Exibir → Temas → Personalizar tema: Principal <code>#4A1E6B</code> · Destaque <code>#00C9A7</code> · Positivo <code>#00C9A7</code> · Negativo <code>#E53E3E</code> · Previsão <code>#FF8F00</code></p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-circle">E</div>
+      <div class="step-body">
+        <h4>Decimal com vírgula (formato BR)</h4>
+        <p>Os arquivos CSV usam vírgula como decimal e ponto e vírgula como separador. No Power Query, confirmar que os números foram reconhecidos corretamente. Se aparecer como texto, trocar o tipo para Número Decimal Fixo com localidade <strong>Português (Brasil)</strong>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- CHECKLIST -->
+<div class="section">
+  <div class="section-header">
+    <div class="step-num">✓</div>
+    <div>
+      <h2>Checklist Final</h2>
+      <p>Conferir antes de publicar</p>
+    </div>
+  </div>
+  <div class="checklist">
+    <div class="check-item"><div class="check-icon"></div>7 tabelas importadas com tipos corretos</div>
+    <div class="check-item"><div class="check-icon"></div>3 relacionamentos criados (documento, vendedor, ano_mes)</div>
+    <div class="check-item"><div class="check-icon"></div>Tabela "Medidas" criada com todas as DAX</div>
+    <div class="check-item"><div class="check-icon"></div>Página 1 CEO — 5 KPIs + gráfico linhas + barras + previsão</div>
+    <div class="check-item"><div class="check-icon"></div>Página 2 Marketing — RFM + rosca + canais + tabela</div>
+    <div class="check-item"><div class="check-icon"></div>Página 3 Performance — ranking + dispersão + tabela</div>
+    <div class="check-item"><div class="check-icon"></div>Página 4 Vendedor — slicer + KPIs + linhas + gauge</div>
+    <div class="check-item"><div class="check-icon"></div>Cores e tema da Vesti aplicados (roxo + verde água)</div>
+    <div class="check-item"><div class="check-icon"></div>Sync Slicers configurado para filtro de ano</div>
+    <div class="check-item"><div class="check-icon"></div>Formatação condicional no Variação MoM</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">
+  <div>Dashboard <strong>Vesti</strong> · Guia Power BI</div>
+  <div>Modelo SARIMA · MAE R$30.603 · MAPE 10,5%</div>
+</div>
+
+</body>
+</html>

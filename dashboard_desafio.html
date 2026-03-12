@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesti — Dashboard de Gestão</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0F0820;
+  --bg2: #1A0D35;
+  --card: #1E0D38;
+  --card2: #261545;
+  --purple: #4A1E6B;
+  --purple-mid: #6B3FA0;
+  --purple-light: #9B6DC8;
+  --teal: #00C9A7;
+  --teal-dark: #009F85;
+  --teal-pale: #00E5C0;
+  --white: #F0EAF9;
+  --muted: #8B7AAF;
+  --border: rgba(0,201,167,0.15);
+  --border2: rgba(107,63,160,0.3);
+  --red: #FF5A7E;
+  --orange: #FFB347;
+  --sidebar: 220px;
+  --header: 60px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; font-family: 'Segoe UI', system-ui, sans-serif; background:var(--bg); color:var(--white); overflow:hidden; }
+
+/* ── LAYOUT ── */
+.app { display:flex; height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width:var(--sidebar); height:100vh; background:var(--bg2);
+  border-right:1px solid var(--border2);
+  display:flex; flex-direction:column;
+  flex-shrink:0; position:relative; z-index:10;
+}
+.sidebar::after {
+  content:''; position:absolute; top:0; right:0; width:1px; height:100%;
+  background: linear-gradient(180deg, var(--teal) 0%, transparent 60%);
+}
+.logo {
+  padding:20px 18px 16px;
+  border-bottom:1px solid var(--border2);
+}
+.logo-mark {
+  display:flex; align-items:center; gap:10px;
+}
+.logo-icon {
+  width:36px; height:36px; border-radius:10px;
+  background: linear-gradient(135deg, var(--teal), var(--purple-mid));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:16px; color:#0F0820; letter-spacing:-1px;
+}
+.logo-text { font-weight:800; font-size:18px; letter-spacing:0.05em; }
+.logo-sub { font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-top:1px; }
+
+.nav { padding:16px 10px; flex:1; display:flex; flex-direction:column; gap:4px; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; cursor:pointer;
+  transition:all .2s; color:var(--muted); font-size:13px; font-weight:500;
+  border:1px solid transparent;
+}
+.nav-item:hover { background:rgba(0,201,167,0.06); color:var(--white); }
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(0,201,167,0.15), rgba(0,201,167,0.05));
+  color:var(--teal); border-color:rgba(0,201,167,0.2);
+}
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-badge {
+  margin-left:auto; background:var(--teal); color:#0F0820;
+  border-radius:100px; padding:1px 7px; font-size:10px; font-weight:700;
+}
+.sidebar-footer {
+  padding:16px; border-top:1px solid var(--border2);
+  display:flex; align-items:center; gap:10px;
+}
+.avatar {
+  width:32px; height:32px; border-radius:50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:#fff;
+}
+.avatar-info { font-size:12px; }
+.avatar-name { font-weight:600; color:var(--white); }
+.avatar-role { color:var(--muted); font-size:10px; }
+
+/* MAIN */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* HEADER */
+.header {
+  height:var(--header); background:var(--bg2);
+  border-bottom:1px solid var(--border2);
+  display:flex; align-items:center; padding:0 24px; gap:16px;
+  flex-shrink:0;
+}
+.header-title { font-size:15px; font-weight:700; flex:1; }
+.header-title span { color:var(--muted); font-weight:400; font-size:13px; margin-left:8px; }
+.header-badge {
+  background:rgba(0,201,167,0.1); border:1px solid var(--teal);
+  color:var(--teal); border-radius:100px; padding:3px 12px; font-size:11px; font-weight:600;
+}
+.header-dot { width:8px; height:8px; border-radius:50%; background:var(--teal); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* CONTENT */
+.content { flex:1; overflow-y:auto; padding:20px 24px; }
+.content::-webkit-scrollbar { width:4px; }
+.content::-webkit-scrollbar-track { background:transparent; }
+.content::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+
+/* PAGES */
+.page { display:none; }
+.page.active { display:block; }
+
+/* ── KPI CARDS ROW ── */
+.kpi-row { display:grid; gap:14px; margin-bottom:20px; }
+.kpi-row.cols-5 { grid-template-columns: repeat(5,1fr); }
+.kpi-row.cols-4 { grid-template-columns: repeat(4,1fr); }
+
+.kpi-card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:14px; padding:16px; position:relative; overflow:hidden;
+  transition:transform .2s, border-color .2s;
+}
+.kpi-card:hover { transform:translateY(-2px); border-color:var(--teal); }
+.kpi-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:var(--accent, linear-gradient(90deg, var(--teal), var(--purple-mid)));
+}
+.kpi-icon {
+  width:34px; height:34px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; margin-bottom:10px;
+}
+.kpi-val { font-size:22px; font-weight:800; line-height:1; margin-bottom:4px; }
+.kpi-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+.kpi-trend {
+  position:absolute; top:14px; right:14px;
+  font-size:11px; font-weight:700; padding:2px 8px;
+  border-radius:100px;
+}
+.trend-up { background:rgba(0,201,167,0.15); color:var(--teal); }
+.trend-dn { background:rgba(255,90,126,0.15); color:var(--red); }
+
+/* ── CHARTS GRID ── */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-3 { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-7-3 { display:grid; grid-template-columns:7fr 3fr; gap:14px; margin-bottom:14px; }
+.grid-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+
+.chart-card {
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:14px; padding:18px; position:relative; overflow:hidden;
+}
+.chart-card.span2 { grid-column: span 2; }
+.chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.chart-title { font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.chart-title::before {
+  content:''; width:3px; height:14px; border-radius:2px;
+  background:var(--teal); display:inline-block;
+}
+.chart-sub { font-size:11px; color:var(--muted); }
+.chart-pill {
+  font-size:10px; padding:2px 9px; border-radius:100px;
+  background:rgba(0,201,167,0.1); color:var(--teal);
+  border:1px solid rgba(0,201,167,0.2); font-weight:600;
+}
+canvas { max-width:100%; }
+
+/* ── PREVISÃO CARDS ── */
+.prev-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.prev-card {
+  background:var(--card2); border:1px solid var(--border);
+  border-radius:12px; padding:14px; text-align:center;
+}
+.prev-mes { font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em; }
+.prev-val { font-size:18px; font-weight:800; color:var(--teal); }
+.prev-range { font-size:10px; color:var(--muted); margin-top:4px; }
+.prev-ped { font-size:11px; color:var(--orange); margin-top:4px; font-weight:600; }
+
+/* ── TABLE ── */
+.data-table { width:100%; border-collapse:collapse; font-size:12px; }
+.data-table th {
+  text-align:left; padding:8px 12px;
+  background:rgba(0,201,167,0.07);
+  color:var(--teal); font-size:10px; letter-spacing:.07em; text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+  font-weight:600;
+}
+.data-table td {
+  padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);
+  color:var(--white);
+}
+.data-table tr:hover td { background:rgba(255,255,255,0.02); }
+.seg-badge {
+  display:inline-block; padding:2px 8px; border-radius:100px;
+  font-size:10px; font-weight:700;
+}
+.seg-VIP { background:rgba(0,201,167,0.2); color:var(--teal); }
+.seg-Leal { background:rgba(107,63,160,0.3); color:#C8A8F0; }
+.seg-Em.Risco, .seg-Em_Risco { background:rgba(255,90,126,0.2); color:var(--red); }
+.seg-Inativo { background:rgba(139,122,175,0.2); color:var(--muted); }
+.seg-Regular { background:rgba(255,179,71,0.15); color:var(--orange); }
+.seg-Novo_Promissor { background:rgba(0,201,167,0.1); color:#7AF0DA; }
+.seg-Perdendo_VIP { background:rgba(255,90,126,0.1); color:#FF9AB5; }
+
+/* ── GAUGE ── */
+.gauge-wrap { display:flex; flex-direction:column; align-items:center; padding:10px; }
+.gauge-val { font-size:28px; font-weight:800; color:var(--teal); }
+.gauge-lbl { font-size:11px; color:var(--muted); margin-top:4px; }
+.gauge-bar-bg {
+  width:100%; height:8px; background:rgba(255,255,255,0.08);
+  border-radius:4px; margin-top:16px; overflow:hidden;
+}
+.gauge-bar { height:100%; border-radius:4px; background: linear-gradient(90deg, var(--teal), var(--teal-pale)); transition:width 1s; }
+
+/* ── MODELO TABLE ── */
+.mod-row {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.mod-row:last-child { border-bottom:none; }
+.mod-name { flex:1; font-size:13px; font-weight:600; }
+.mod-mape { font-size:20px; font-weight:800; }
+.mod-best { color:var(--teal); }
+.mod-ok { color:var(--orange); }
+.mod-bad { color:var(--red); }
+.mod-tag {
+  font-size:10px; padding:2px 8px; border-radius:100px;
+  background:rgba(0,201,167,0.15); color:var(--teal); font-weight:700;
+}
+.mod-bar-bg { flex:2; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.mod-bar { height:100%; border-radius:3px; }
+
+/* ── SLICER ── */
+.slicer-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.slicer-btn {
+  padding:6px 14px; border-radius:100px; border:1px solid var(--border2);
+  background:transparent; color:var(--muted); font-size:12px; font-weight:500;
+  cursor:pointer; transition:all .2s;
+}
+.slicer-btn:hover { border-color:var(--teal); color:var(--teal); }
+.slicer-btn.active { background:var(--teal); color:#0F0820; border-color:var(--teal); font-weight:700; }
+
+/* ── VENDEDOR PAGE ── */
+.vend-profile {
+  display:flex; align-items:center; gap:16px;
+  background:var(--card); border:1px solid var(--border2);
+  border-radius:14px; padding:16px 20px; margin-bottom:16px;
+}
+.vend-avatar {
+  width:52px; height:52px; border-radius:50%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:800; color:#fff; flex-shrink:0;
+}
+.vend-name { font-size:18px; font-weight:800; }
+.vend-meta { font-size:12px; color:var(--muted); margin-top:2px; }
+.vend-rank {
+  margin-left:auto; text-align:center;
+  background:rgba(0,201,167,0.1); border:1px solid var(--teal);
+  border-radius:12px; padding:10px 20px;
+}
+.vend-rank-num { font-size:28px; font-weight:900; color:var(--teal); line-height:1; }
+.vend-rank-lbl { font-size:10px; color:var(--muted); }
+
+/* RESPONSIVE TWEAKS */
+@media (max-width:1200px) {
+  .kpi-row.cols-5 { grid-template-columns: repeat(3,1fr); }
+}
+
+/* Scrollable table wrapper */
+.table-scroll { overflow-x:auto; }
+.table-scroll::-webkit-scrollbar { height:4px; }
+.table-scroll::-webkit-scrollbar-thumb { background:var(--border2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">V</div>
+      <div>
+        <div class="logo-text">VESTI</div>
+        <div class="logo-sub">Painel de Gestão</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" onclick="showPage('ceo')">
+      <span class="nav-icon">📊</span> Visão CEO
+    </div>
+    <div class="nav-item" onclick="showPage('marketing')">
+      <span class="nav-icon">🎯</span> Marketing
+      <span class="nav-badge">RFM</span>
+    </div>
+    <div class="nav-item" onclick="showPage('performance')">
+      <span class="nav-icon">🏆</span> Performance
+    </div>
+    <div class="nav-item" onclick="showPage('vendedor')">
+      <span class="nav-icon">👤</span> Vendedor
+    </div>
+    <div class="nav-item" onclick="showPage('preditivo')">
+      <span class="nav-icon">🔮</span> Modelo SARIMA
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar">V</div>
+    <div class="avatar-info">
+      <div class="avatar-name">Vesti Corp.</div>
+      <div class="avatar-role">Nov/2024</div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="header">
+    <div class="header-title" id="pageTitle">Visão Executiva CEO <span>Jan/2022 – Nov/2024</span></div>
+    <div class="header-dot"></div>
+    <div class="header-badge">Ao Vivo</div>
+  </div>
+
+  <div class="content">
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- PAGE 1: CEO                                  -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="page active" id="page-ceo">
+      <div class="kpi-row cols-5">
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00C9A7,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,201,167,0.15)">💰</div>
+          <div class="kpi-val" id="k-receita">—</div>
+          <div class="kpi-lbl">Receita Total</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#6B3FA0,#9B6DC8)">
+          <div class="kpi-icon" style="background:rgba(107,63,160,0.2)">📦</div>
+          <div class="kpi-val" id="k-pedidos">—</div>
+          <div class="kpi-lbl">Qtd Pedidos</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00E5C0,#00C9A7)">
+          <div class="kpi-icon" style="background:rgba(0,229,192,0.12)">🏷️</div>
+          <div class="kpi-val" id="k-ticket">—</div>
+          <div class="kpi-lbl">Ticket Médio</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#9B6DC8,#6B3FA0)">
+          <div class="kpi-icon" style="background:rgba(155,109,200,0.15)">👥</div>
+          <div class="kpi-val" id="k-clientes">—</div>
+          <div class="kpi-lbl">Clientes Ativos</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FFB347,#FF8F00)">
+          <div class="kpi-icon" style="background:rgba(255,179,71,0.15)">📈</div>
+          <div class="kpi-val" id="k-mom">—</div>
+          <div class="kpi-lbl">Variação MoM</div>
+          <div class="kpi-trend trend-up" id="k-mom-badge">↑</div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Receita Mensal — Realizado vs Previsão</div>
+              <div class="chart-sub">série_historico_previsao · Modelo SARIMA</div>
+            </div>
+            <div class="chart-pill">35 meses</div>
+          </div>
+          <canvas id="chart-linha" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Previsão SARIMA</div>
+          </div>
+          <div class="prev-grid" id="prev-cards"></div>
+          <div style="margin-top:16px">
+            <canvas id="chart-prev-bar" height="130"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Receita por Trimestre</div>
+            <div class="chart-sub">agrupado por ano</div>
+          </div>
+          <canvas id="chart-trimestre" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Receita por Canal</div>
+          </div>
+          <canvas id="chart-canal" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- PAGE 2: MARKETING                            -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="page" id="page-marketing">
+      <div class="kpi-row cols-4">
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00C9A7,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,201,167,0.15)">👥</div>
+          <div class="kpi-val" id="mk-total">—</div>
+          <div class="kpi-lbl">Total Clientes</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FFB347,#FF8F00)">
+          <div class="kpi-icon" style="background:rgba(255,179,71,0.15)">⭐</div>
+          <div class="kpi-val" id="mk-vip">—</div>
+          <div class="kpi-lbl">Clientes VIP</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FF5A7E,#FF2256)">
+          <div class="kpi-icon" style="background:rgba(255,90,126,0.15)">⚠️</div>
+          <div class="kpi-val" id="mk-risco">—</div>
+          <div class="kpi-lbl">Em Risco</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#9B6DC8,#6B3FA0)">
+          <div class="kpi-icon" style="background:rgba(155,109,200,0.15)">🔗</div>
+          <div class="kpi-val" id="mk-omni">—</div>
+          <div class="kpi-lbl">% Omnichannel</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Segmentação RFM de Clientes</div>
+            <div class="chart-pill">7 segmentos</div>
+          </div>
+          <canvas id="chart-donut" height="220"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Receita por Canal</div>
+            <div class="chart-sub">R$ por origem de venda</div>
+          </div>
+          <canvas id="chart-canal-h" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Faixa de Valor dos Pedidos</div>
+          </div>
+          <canvas id="chart-faixa" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Uso de Cupom</div>
+          </div>
+          <canvas id="chart-cupom" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Top 10 Clientes por Valor Total</div>
+          <div class="chart-pill">RFM detalhado</div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="tbl-clientes"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- PAGE 3: PERFORMANCE                          -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="page" id="page-performance">
+      <div class="kpi-row cols-4">
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00C9A7,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,201,167,0.15)">👤</div>
+          <div class="kpi-val" id="pf-vend">—</div>
+          <div class="kpi-lbl">Vendedores Ativos</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#6B3FA0,#9B6DC8)">
+          <div class="kpi-icon" style="background:rgba(107,63,160,0.2)">💰</div>
+          <div class="kpi-val" id="pf-receita">—</div>
+          <div class="kpi-lbl">Receita Total</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00E5C0,#00C9A7)">
+          <div class="kpi-icon" style="background:rgba(0,229,192,0.12)">🏷️</div>
+          <div class="kpi-val" id="pf-ticket">—</div>
+          <div class="kpi-lbl">Ticket Médio</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FFB347,#FF8F00)">
+          <div class="kpi-icon" style="background:rgba(255,179,71,0.15)">🥇</div>
+          <div class="kpi-val" id="pf-top">—</div>
+          <div class="kpi-lbl">Top Vendedora</div>
+        </div>
+      </div>
+
+      <div class="grid-7-3">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Ranking de Vendedores por Receita</div>
+            <div class="chart-sub">ordenado decrescente</div>
+          </div>
+          <canvas id="chart-ranking" height="300"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Dispersão: Pedidos × Ticket</div>
+            <div class="chart-sub">tamanho = receita total</div>
+          </div>
+          <canvas id="chart-scatter" height="300"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:14px">
+        <div class="chart-header">
+          <div class="chart-title">Top 5 Vendedoras — Evolução Mensal</div>
+          <div id="top5-legend" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+        </div>
+        <canvas id="chart-top5" height="160"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Tabela Completa de Vendedores</div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="tbl-vendedores"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- PAGE 4: VENDEDOR                             -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="page" id="page-vendedor">
+      <div class="slicer-row" id="vend-slicer"></div>
+
+      <div class="vend-profile" id="vend-profile">
+        <div class="vend-avatar" id="vend-avatar">V</div>
+        <div>
+          <div class="vend-name" id="vend-pname">—</div>
+          <div class="vend-meta" id="vend-pmeta">—</div>
+        </div>
+        <div class="vend-rank">
+          <div class="vend-rank-num" id="vend-prank">—</div>
+          <div class="vend-rank-lbl">de 20 vendedoras</div>
+        </div>
+      </div>
+
+      <div class="kpi-row cols-4">
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00C9A7,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,201,167,0.15)">💰</div>
+          <div class="kpi-val" id="vd-receita">—</div>
+          <div class="kpi-lbl">Minhas Vendas</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#9B6DC8,#6B3FA0)">
+          <div class="kpi-icon" style="background:rgba(155,109,200,0.15)">📦</div>
+          <div class="kpi-val" id="vd-pedidos">—</div>
+          <div class="kpi-lbl">Meus Pedidos</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00E5C0,#00C9A7)">
+          <div class="kpi-icon" style="background:rgba(0,229,192,0.12)">🏷️</div>
+          <div class="kpi-val" id="vd-ticket">—</div>
+          <div class="kpi-lbl">Meu Ticket Médio</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FFB347,#FF8F00)">
+          <div class="kpi-icon" style="background:rgba(255,179,71,0.15)">👥</div>
+          <div class="kpi-val" id="vd-clientes">—</div>
+          <div class="kpi-lbl">Meus Clientes</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card" style="grid-column:span 2">
+          <div class="chart-header">
+            <div class="chart-title">Minha Evolução Mensal</div>
+            <div class="chart-sub">receita acumulada por mês</div>
+          </div>
+          <canvas id="chart-vend-linha" height="150"></canvas>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Minhas Vendas vs Média da Equipe</div>
+          </div>
+          <div class="gauge-wrap" id="vend-gauge"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Meus Top Clientes</div>
+            <div class="chart-pill" id="vend-top-badge">—</div>
+          </div>
+          <div id="vend-top-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- PAGE 5: PREDITIVO                            -->
+    <!-- ════════════════════════════════════════════ -->
+    <div class="page" id="page-preditivo">
+      <div class="kpi-row cols-4">
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00C9A7,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,201,167,0.15)">🎯</div>
+          <div class="kpi-val">10,5%</div>
+          <div class="kpi-lbl">MAPE SARIMA</div>
+          <div class="kpi-trend trend-up">Melhor</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#9B6DC8,#6B3FA0)">
+          <div class="kpi-icon" style="background:rgba(155,109,200,0.15)">📉</div>
+          <div class="kpi-val">R$30,6K</div>
+          <div class="kpi-lbl">MAE (Erro Médio)</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#FFB347,#FF8F00)">
+          <div class="kpi-icon" style="background:rgba(255,179,71,0.15)">📐</div>
+          <div class="kpi-val">R$45,1K</div>
+          <div class="kpi-lbl">RMSE</div>
+        </div>
+        <div class="kpi-card" style="--accent:linear-gradient(90deg,#00E5C0,#009F85)">
+          <div class="kpi-icon" style="background:rgba(0,229,192,0.12)">🤖</div>
+          <div class="kpi-val" style="font-size:14px">SARIMA(1,1,1)</div>
+          <div class="kpi-lbl">Modelo Selecionado</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:14px">
+        <div class="chart-header">
+          <div class="chart-title">Série Histórica + Previsão SARIMA</div>
+          <div class="chart-sub">Realizado (teal) · Previsto (laranja) — ponto de conexão compartilhado</div>
+        </div>
+        <canvas id="chart-pred-linha" height="200"></canvas>
+      </div>
+
+      <div class="grid-3col">
+        <div class="chart-card" id="prev-cards-pred"></div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Comparação de Modelos</div>
+          </div>
+          <div id="mod-list"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">MAPE por Modelo</div>
+          </div>
+          <canvas id="chart-mape" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const D = {"kpis": {"receita_total": 11180813.84, "qtd_pedidos": 12222, "ticket_medio": 914.81, "clientes_ativos": 3479, "mom": 3.88, "vip": 871, "em_risco": 768, "pct_omni": 65.3, "vendedores": 20}, "serie_real": [{"ano_mes": "2022-01", "receita_total": 207424.4}, {"ano_mes": "2022-02", "receita_total": 246935.09}, {"ano_mes": "2022-03", "receita_total": 249827.18}, {"ano_mes": "2022-04", "receita_total": 291237.53}, {"ano_mes": "2022-05", "receita_total": 250555.19}, {"ano_mes": "2022-06", "receita_total": 287357.41}, {"ano_mes": "2022-07", "receita_total": 212846.3}, {"ano_mes": "2022-08", "receita_total": 257268.17}, {"ano_mes": "2022-09", "receita_total": 298455.68}, {"ano_mes": "2022-10", "receita_total": 366976.28}, {"ano_mes": "2022-11", "receita_total": 413152.23}, {"ano_mes": "2022-12", "receita_total": 367395.51}, {"ano_mes": "2023-01", "receita_total": 277400.07}, {"ano_mes": "2023-02", "receita_total": 224905.93}, {"ano_mes": "2023-03", "receita_total": 339994.92}, {"ano_mes": "2023-04", "receita_total": 361783.2}, {"ano_mes": "2023-05", "receita_total": 351623.13}, {"ano_mes": "2023-06", "receita_total": 385417.33}, {"ano_mes": "2023-07", "receita_total": 249453.3}, {"ano_mes": "2023-08", "receita_total": 255840.1}, {"ano_mes": "2023-09", "receita_total": 386878.57}, {"ano_mes": "2023-10", "receita_total": 444787.33}, {"ano_mes": "2023-11", "receita_total": 490117.1}, {"ano_mes": "2023-12", "receita_total": 422373.95}, {"ano_mes": "2024-01", "receita_total": 266907.88}, {"ano_mes": "2024-02", "receita_total": 216566.08}, {"ano_mes": "2024-03", "receita_total": 324845.02}, {"ano_mes": "2024-04", "receita_total": 339587.42}, {"ano_mes": "2024-05", "receita_total": 300809.65}, {"ano_mes": "2024-06", "receita_total": 291461.74}, {"ano_mes": "2024-07", "receita_total": 206185.17}, {"ano_mes": "2024-08", "receita_total": 327589.88}, {"ano_mes": "2024-09", "receita_total": 313004.08}, {"ano_mes": "2024-10", "receita_total": 467857.41}, {"ano_mes": "2024-11", "receita_total": 485993.61}], "serie_prev": [{"ano_mes": "2024-11", "receita_total": 485993.61}, {"ano_mes": "2024-12", "receita_total": 495713.48}, {"ano_mes": "2025-01", "receita_total": 471413.8}, {"ano_mes": "2025-02", "receita_total": 510293.29}], "trimestre": [{"trimestre": "Q1/2022", "valor_pedido": 704186.67}, {"trimestre": "Q1/2023", "valor_pedido": 842300.92}, {"trimestre": "Q1/2024", "valor_pedido": 808318.98}, {"trimestre": "Q2/2022", "valor_pedido": 829150.13}, {"trimestre": "Q2/2023", "valor_pedido": 1098823.66}, {"trimestre": "Q2/2024", "valor_pedido": 931858.81}, {"trimestre": "Q3/2022", "valor_pedido": 768570.15}, {"trimestre": "Q3/2023", "valor_pedido": 892171.97}, {"trimestre": "Q3/2024", "valor_pedido": 846779.13}, {"trimestre": "Q4/2022", "valor_pedido": 1147524.02}, {"trimestre": "Q4/2023", "valor_pedido": 1357278.38}, {"trimestre": "Q4/2024", "valor_pedido": 953851.02}], "segmentos": [{"segmento": "VIP", "count": 871}, {"segmento": "Inativo", "count": 715}, {"segmento": "Em Risco", "count": 612}, {"segmento": "Leal", "count": 545}, {"segmento": "Regular", "count": 376}, {"segmento": "Novo Promissor", "count": 325}, {"segmento": "Perdendo VIP", "count": 156}], "canal": [{"canal": "App", "valor_pedido": 1051191.33}, {"canal": "Link", "valor_pedido": 2214091.42}, {"canal": "Site", "valor_pedido": 2979761.75}, {"canal": "Loja", "valor_pedido": 4935769.34}], "faixa": [{"faixa": "Até R$200", "qtd": 754}, {"faixa": "R$201-500", "qtd": 3677}, {"faixa": "R$501-1000", "qtd": 4094}, {"faixa": "R$1001-2000", "qtd": 2643}, {"faixa": "R$2001-5000", "qtd": 983}, {"faixa": "Acima R$5000", "qtd": 71}], "cupom": [{"tipo": "Sem Cupom", "qtd": 5204}, {"tipo": "Frete Grátis", "qtd": 1780}, {"tipo": "Desconto", "qtd": 1769}, {"tipo": "Cashback", "qtd": 1758}, {"tipo": "Parceiro", "qtd": 1711}], "vendedores_rank": [{"vendedor": "Bianca", "total_vendas": 543447.88}, {"vendedor": "Patrícia", "total_vendas": 544602.78}, {"vendedor": "Juliana", "total_vendas": 555876.33}, {"vendedor": "Adriana", "total_vendas": 562521.2}, {"vendedor": "Luciana", "total_vendas": 565911.22}, {"vendedor": "Amanda", "total_vendas": 567371.47}, {"vendedor": "Keli", "total_vendas": 568252.56}, {"vendedor": "Elaine", "total_vendas": 569404.07}, {"vendedor": "Larissa", "total_vendas": 569500.06}, {"vendedor": "Carla", "total_vendas": 570177.73}, {"vendedor": "Fernanda", "total_vendas": 570463.72}, {"vendedor": "Simone", "total_vendas": 570961.76}, {"vendedor": "Aline", "total_vendas": 577999.42}, {"vendedor": "Débora", "total_vendas": 584517.19}, {"vendedor": "Vanessa", "total_vendas": 588730.28}], "top5_evo": [{"ano_mes":"2024-01","vendedor":"Aline","valor_pedido":13865.53},{"ano_mes":"2024-01","vendedor":"Débora","valor_pedido":8762.94},{"ano_mes":"2024-01","vendedor":"Fernanda","valor_pedido":8645.12},{"ano_mes":"2024-01","vendedor":"Simone","valor_pedido":10938.0},{"ano_mes":"2024-01","vendedor":"Vanessa","valor_pedido":14027.95},{"ano_mes":"2024-02","vendedor":"Aline","valor_pedido":14289.02},{"ano_mes":"2024-02","vendedor":"Débora","valor_pedido":11220.15},{"ano_mes":"2024-02","vendedor":"Fernanda","valor_pedido":7857.98},{"ano_mes":"2024-02","vendedor":"Simone","valor_pedido":6535.4},{"ano_mes":"2024-02","vendedor":"Vanessa","valor_pedido":17036.37},{"ano_mes":"2024-03","vendedor":"Aline","valor_pedido":18268.45},{"ano_mes":"2024-03","vendedor":"Débora","valor_pedido":22038.02},{"ano_mes":"2024-03","vendedor":"Fernanda","valor_pedido":23811.56},{"ano_mes":"2024-03","vendedor":"Simone","valor_pedido":20145.2},{"ano_mes":"2024-03","vendedor":"Vanessa","valor_pedido":10698.29},{"ano_mes":"2024-04","vendedor":"Aline","valor_pedido":19462.9},{"ano_mes":"2024-04","vendedor":"Débora","valor_pedido":15460.27},{"ano_mes":"2024-04","vendedor":"Fernanda","valor_pedido":14497.1},{"ano_mes":"2024-04","vendedor":"Simone","valor_pedido":11448.43},{"ano_mes":"2024-04","vendedor":"Vanessa","valor_pedido":18650.8},{"ano_mes":"2024-05","vendedor":"Aline","valor_pedido":9577.09},{"ano_mes":"2024-05","vendedor":"Débora","valor_pedido":10108.35},{"ano_mes":"2024-05","vendedor":"Fernanda","valor_pedido":9224.09},{"ano_mes":"2024-05","vendedor":"Simone","valor_pedido":12920.3},{"ano_mes":"2024-05","vendedor":"Vanessa","valor_pedido":30645.87},{"ano_mes":"2024-06","vendedor":"Aline","valor_pedido":6783.94},{"ano_mes":"2024-06","vendedor":"Débora","valor_pedido":18794.88},{"ano_mes":"2024-06","vendedor":"Fernanda","valor_pedido":15709.93},{"ano_mes":"2024-06","vendedor":"Simone","valor_pedido":9366.31},{"ano_mes":"2024-06","vendedor":"Vanessa","valor_pedido":9027.95},{"ano_mes":"2024-07","vendedor":"Aline","valor_pedido":11147.9},{"ano_mes":"2024-07","vendedor":"Débora","valor_pedido":8729.5},{"ano_mes":"2024-07","vendedor":"Fernanda","valor_pedido":2874.29},{"ano_mes":"2024-07","vendedor":"Simone","valor_pedido":19134.2},{"ano_mes":"2024-07","vendedor":"Vanessa","valor_pedido":8446.77},{"ano_mes":"2024-08","vendedor":"Aline","valor_pedido":16459.34},{"ano_mes":"2024-08","vendedor":"Débora","valor_pedido":15057.44},{"ano_mes":"2024-08","vendedor":"Fernanda","valor_pedido":13198.1},{"ano_mes":"2024-08","vendedor":"Simone","valor_pedido":24015.24},{"ano_mes":"2024-08","vendedor":"Vanessa","valor_pedido":30080.56},{"ano_mes":"2024-09","vendedor":"Aline","valor_pedido":27350.18},{"ano_mes":"2024-09","vendedor":"Débora","valor_pedido":17982.9},{"ano_mes":"2024-09","vendedor":"Fernanda","valor_pedido":19903.77},{"ano_mes":"2024-09","vendedor":"Simone","valor_pedido":16813.98},{"ano_mes":"2024-09","vendedor":"Vanessa","valor_pedido":11388.97},{"ano_mes":"2024-10","vendedor":"Aline","valor_pedido":31810.8},{"ano_mes":"2024-10","vendedor":"Débora","valor_pedido":15465.34},{"ano_mes":"2024-10","vendedor":"Fernanda","valor_pedido":25318.96},{"ano_mes":"2024-10","vendedor":"Simone","valor_pedido":19922.66},{"ano_mes":"2024-10","vendedor":"Vanessa","valor_pedido":19003.01},{"ano_mes":"2024-11","vendedor":"Aline","valor_pedido":12191.52},{"ano_mes":"2024-11","vendedor":"Débora","valor_pedido":27876.58},{"ano_mes":"2024-11","vendedor":"Fernanda","valor_pedido":11897.54},{"ano_mes":"2024-11","vendedor":"Simone","valor_pedido":26955.63},{"ano_mes":"2024-11","vendedor":"Vanessa","valor_pedido":30668.12}], "top5_names": ["Vanessa", "Débora", "Aline", "Simone", "Fernanda"], "top_clientes": [{"nome_cliente": "Mariana Martins", "segmento": "VIP", "frequencia": 6.0, "monetario": 16890.21, "ticket_medio": 2815.04}, {"nome_cliente": "Leticia Silva", "segmento": "VIP", "frequencia": 5.0, "monetario": 15996.7, "ticket_medio": 3199.34}, {"nome_cliente": "Natalia Ferreira", "segmento": "VIP", "frequencia": 13.0, "monetario": 15033.51, "ticket_medio": 1156.42}, {"nome_cliente": "Renata Nascimento", "segmento": "VIP", "frequencia": 5.0, "monetario": 14970.16, "ticket_medio": 2994.03}, {"nome_cliente": "Paula Carvalho", "segmento": "Em Risco", "frequencia": 7.0, "monetario": 14708.57, "ticket_medio": 2101.22}, {"nome_cliente": "Juliana Ferreira", "segmento": "Perdendo VIP", "frequencia": 6.0, "monetario": 14174.33, "ticket_medio": 2362.39}, {"nome_cliente": "Sofia Pereira", "segmento": "Em Risco", "frequencia": 5.0, "monetario": 13998.11, "ticket_medio": 2799.62}, {"nome_cliente": "Leticia Araujo", "segmento": "VIP", "frequencia": 10.0, "monetario": 13819.99, "ticket_medio": 1382.0}, {"nome_cliente": "Isabela Santos", "segmento": "VIP", "frequencia": 6.0, "monetario": 13706.11, "ticket_medio": 2284.35}, {"nome_cliente": "Ana Gomes", "segmento": "VIP", "frequencia": 9.0, "monetario": 13660.89, "ticket_medio": 1517.88}], "previsao": [{"mes": "2024-12", "receita_prevista": 495713.48, "receita_min": 443663.57, "receita_max": 547763.4, "pedidos_previstos": 527}, {"mes": "2025-01", "receita_prevista": 471413.8, "receita_min": 421915.35, "receita_max": 520912.25, "pedidos_previstos": 501}, {"mes": "2025-02", "receita_prevista": 510293.29, "receita_min": 456712.49, "receita_max": 563874.09, "pedidos_previstos": 542}], "modelos": [{"modelo": "SARIMA", "MAE": 30603, "RMSE": 45132, "MAPE_%": 10.5}, {"modelo": "Holt-Winters", "MAE": 38410, "RMSE": 54200, "MAPE_%": 14.2}, {"modelo": "Regressão Linear", "MAE": 52800, "RMSE": 71300, "MAPE_%": 19.8}], "scatter": [{"vendedor": "Vanessa", "qtd_pedidos": 614, "ticket_medio": 958.84, "total_vendas": 588730.28}, {"vendedor": "Débora", "qtd_pedidos": 645, "ticket_medio": 906.23, "total_vendas": 584517.19}, {"vendedor": "Aline", "qtd_pedidos": 636, "ticket_medio": 908.8, "total_vendas": 577999.42}, {"vendedor": "Simone", "qtd_pedidos": 625, "ticket_medio": 913.54, "total_vendas": 570961.76}, {"vendedor": "Fernanda", "qtd_pedidos": 616, "ticket_medio": 926.08, "total_vendas": 570463.72}, {"vendedor": "Carla", "qtd_pedidos": 611, "ticket_medio": 933.19, "total_vendas": 570177.73}, {"vendedor": "Larissa", "qtd_pedidos": 645, "ticket_medio": 882.95, "total_vendas": 569500.06}, {"vendedor": "Elaine", "qtd_pedidos": 601, "ticket_medio": 947.43, "total_vendas": 569404.07}, {"vendedor": "Keli", "qtd_pedidos": 578, "ticket_medio": 983.14, "total_vendas": 568252.56}, {"vendedor": "Amanda", "qtd_pedidos": 616, "ticket_medio": 921.06, "total_vendas": 567371.47}, {"vendedor": "Luciana", "qtd_pedidos": 630, "ticket_medio": 898.27, "total_vendas": 565911.22}, {"vendedor": "Adriana", "qtd_pedidos": 616, "ticket_medio": 913.18, "total_vendas": 562521.2}, {"vendedor": "Juliana", "qtd_pedidos": 602, "ticket_medio": 923.38, "total_vendas": 555876.33}, {"vendedor": "Patrícia", "qtd_pedidos": 593, "ticket_medio": 918.39, "total_vendas": 544602.78}, {"vendedor": "Bianca", "qtd_pedidos": 590, "ticket_medio": 921.1, "total_vendas": 543447.88}, {"vendedor": "Mariana", "qtd_pedidos": 613, "ticket_medio": 877.91, "total_vendas": 538155.79}, {"vendedor": "Tatiane", "qtd_pedidos": 589, "ticket_medio": 911.0, "total_vendas": 536578.8}, {"vendedor": "Renata", "qtd_pedidos": 606, "ticket_medio": 880.58, "total_vendas": 533631.28}, {"vendedor": "Camila", "qtd_pedidos": 611, "ticket_medio": 872.87, "total_vendas": 533326.33}, {"vendedor": "Priscila", "qtd_pedidos": 585, "ticket_medio": 904.93, "total_vendas": 529383.97}], "dim_vend_all": [{"vendedor": "Vanessa", "total_vendas": 588730.28, "qtd_pedidos": 614, "ticket_medio": 958.84, "clientes_atendidos": 562, "pedidos_por_cliente": 1.09}, {"vendedor": "Débora", "total_vendas": 584517.19, "qtd_pedidos": 645, "ticket_medio": 906.23, "clientes_atendidos": 588, "pedidos_por_cliente": 1.1}, {"vendedor": "Aline", "total_vendas": 577999.42, "qtd_pedidos": 636, "ticket_medio": 908.8, "clientes_atendidos": 582, "pedidos_por_cliente": 1.09}, {"vendedor": "Simone", "total_vendas": 570961.76, "qtd_pedidos": 625, "ticket_medio": 913.54, "clientes_atendidos": 586, "pedidos_por_cliente": 1.07}, {"vendedor": "Fernanda", "total_vendas": 570463.72, "qtd_pedidos": 616, "ticket_medio": 926.08, "clientes_atendidos": 561, "pedidos_por_cliente": 1.1}, {"vendedor": "Carla", "total_vendas": 570177.73, "qtd_pedidos": 611, "ticket_medio": 933.19, "clientes_atendidos": 549, "pedidos_por_cliente": 1.11}, {"vendedor": "Larissa", "total_vendas": 569500.06, "qtd_pedidos": 645, "ticket_medio": 882.95, "clientes_atendidos": 581, "pedidos_por_cliente": 1.11}, {"vendedor": "Elaine", "total_vendas": 569404.07, "qtd_pedidos": 601, "ticket_medio": 947.43, "clientes_atendidos": 550, "pedidos_por_cliente": 1.09}, {"vendedor": "Keli", "total_vendas": 568252.56, "qtd_pedidos": 578, "ticket_medio": 983.14, "clientes_atendidos": 527, "pedidos_por_cliente": 1.1}, {"vendedor": "Amanda", "total_vendas": 567371.47, "qtd_pedidos": 616, "ticket_medio": 921.06, "clientes_atendidos": 565, "pedidos_por_cliente": 1.09}, {"vendedor": "Luciana", "total_vendas": 565911.22, "qtd_pedidos": 630, "ticket_medio": 898.27, "clientes_atendidos": 577, "pedidos_por_cliente": 1.09}, {"vendedor": "Adriana", "total_vendas": 562521.2, "qtd_pedidos": 616, "ticket_medio": 913.18, "clientes_atendidos": 577, "pedidos_por_cliente": 1.07}, {"vendedor": "Juliana", "total_vendas": 555876.33, "qtd_pedidos": 602, "ticket_medio": 923.38, "clientes_atendidos": 553, "pedidos_por_cliente": 1.09}, {"vendedor": "Patrícia", "total_vendas": 544602.78, "qtd_pedidos": 593, "ticket_medio": 918.39, "clientes_atendidos": 558, "pedidos_por_cliente": 1.06}, {"vendedor": "Bianca", "total_vendas": 543447.88, "qtd_pedidos": 590, "ticket_medio": 921.1, "clientes_atendidos": 554, "pedidos_por_cliente": 1.06}, {"vendedor": "Mariana", "total_vendas": 538155.79, "qtd_pedidos": 613, "ticket_medio": 877.91, "clientes_atendidos": 561, "pedidos_por_cliente": 1.09}, {"vendedor": "Tatiane", "total_vendas": 536578.8, "qtd_pedidos": 589, "ticket_medio": 911.0, "clientes_atendidos": 554, "pedidos_por_cliente": 1.06}, {"vendedor": "Renata", "total_vendas": 533631.28, "qtd_pedidos": 606, "ticket_medio": 880.58, "clientes_atendidos": 558, "pedidos_por_cliente": 1.09}, {"vendedor": "Camila", "total_vendas": 533326.33, "qtd_pedidos": 611, "ticket_medio": 872.87, "clientes_atendidos": 552, "pedidos_por_cliente": 1.11}, {"vendedor": "Priscila", "total_vendas": 529383.97, "qtd_pedidos": 585, "ticket_medio": 904.93, "clientes_atendidos": 542, "pedidos_por_cliente": 1.08}]};
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+const BRL = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const BRL2 = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const PCT = v => v.toFixed(1)+'%';
+const NUM = v => v.toLocaleString('pt-BR');
+
+const TEAL = '#00C9A7';
+const PURPLE = '#6B3FA0';
+const ORANGE = '#FFB347';
+const RED = '#FF5A7E';
+const TEAL2 = '#009F85';
+const PALE = '#9B6DC8';
+
+const CHART_DEFAULTS = {
+  responsive: true,
+  plugins: {
+    legend: { labels: { color:'#8B7AAF', font:{size:11}, boxWidth:10, padding:12 } },
+    tooltip: {
+      backgroundColor:'#1A0D35', borderColor:'#00C9A7', borderWidth:1,
+      titleColor:'#F0EAF9', bodyColor:'#8B7AAF',
+    }
+  },
+  scales: {
+    x: { ticks:{color:'#8B7AAF', font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'} },
+    y: { ticks:{color:'#8B7AAF', font:{size:10}, callback: v=>BRL(v)}, grid:{color:'rgba(255,255,255,0.06)'} }
+  }
+};
+
+function ctxCfg(extra={}) {
+  return {...CHART_DEFAULTS, ...extra,
+    plugins: {...CHART_DEFAULTS.plugins, ...(extra.plugins||{})},
+    scales: {...CHART_DEFAULTS.scales, ...(extra.scales||{})}
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════════════════
+const pageTitles = {
+  ceo: 'Visão Executiva CEO <span>Jan/2022 – Nov/2024</span>',
+  marketing: 'Marketing & Clientes',
+  performance: 'Performance da Equipe',
+  vendedor: 'Meus Resultados',
+  preditivo: 'Modelo Preditivo SARIMA'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.textContent.toLowerCase().includes(id==='ceo'?'ceo':id==='marketing'?'marketing':id==='performance'?'performance':id==='vendedor'?'vendedor':'sarima'))
+      n.classList.add('active');
+  });
+  document.getElementById('pageTitle').innerHTML = pageTitles[id];
+}
+
+// ══════════════════════════════════════════════════════
+// INIT KPIs
+// ══════════════════════════════════════════════════════
+document.getElementById('k-receita').textContent = BRL(D.kpis.receita_total);
+document.getElementById('k-pedidos').textContent = NUM(D.kpis.qtd_pedidos);
+document.getElementById('k-ticket').textContent = BRL(D.kpis.ticket_medio);
+document.getElementById('k-clientes').textContent = NUM(D.kpis.clientes_ativos);
+document.getElementById('k-mom').textContent = (D.kpis.mom>0?'+':'')+D.kpis.mom.toFixed(1)+'%';
+document.getElementById('mk-total').textContent = NUM(D.kpis.clientes_ativos);
+document.getElementById('mk-vip').textContent = NUM(D.kpis.vip);
+document.getElementById('mk-risco').textContent = NUM(D.kpis.em_risco);
+document.getElementById('mk-omni').textContent = D.kpis.pct_omni.toFixed(1)+'%';
+document.getElementById('pf-vend').textContent = D.kpis.vendedores;
+document.getElementById('pf-receita').textContent = BRL(D.kpis.receita_total);
+document.getElementById('pf-ticket').textContent = BRL(D.kpis.ticket_medio);
+document.getElementById('pf-top').textContent = D.dim_vend_all[0].vendedor;
+
+// ══════════════════════════════════════════════════════
+// PREVISÃO CARDS
+// ══════════════════════════════════════════════════════
+const prevMeses = {'2024-12':'Dez/2024','2025-01':'Jan/2025','2025-02':'Fev/2025'};
+let prevHtml = '';
+D.previsao.forEach(p => {
+  prevHtml += `<div class="prev-card">
+    <div class="prev-mes">${prevMeses[p.mes]||p.mes}</div>
+    <div class="prev-val">${BRL(p.receita_prevista)}</div>
+    <div class="prev-range">${BRL(p.receita_min)} – ${BRL(p.receita_max)}</div>
+    <div class="prev-ped">📦 ${NUM(p.pedidos_previstos)} pedidos</div>
+  </div>`;
+});
+document.getElementById('prev-cards').innerHTML = prevHtml;
+
+let prevHtml2 = `<div class="chart-header" style="margin-bottom:12px"><div class="chart-title">Previsão 3 Meses</div></div>` + prevHtml;
+document.getElementById('prev-cards-pred').innerHTML = prevHtml2;
+
+// ══════════════════════════════════════════════════════
+// CHART 1 — LINHA HISTÓRICO + PREVISÃO
+// ══════════════════════════════════════════════════════
+(function() {
+  const allLabels = [...D.serie_real.map(r=>r.ano_mes), ...D.serie_prev.slice(1).map(r=>r.ano_mes)];
+  const realData = allLabels.map(l => {
+    const f = D.serie_real.find(r=>r.ano_mes===l);
+    return f ? f.receita_total : null;
+  });
+  const prevData = allLabels.map(l => {
+    const f = D.serie_prev.find(r=>r.ano_mes===l);
+    return f ? f.receita_total : null;
+  });
+
+  new Chart(document.getElementById('chart-linha'), {
+    type:'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        { label:'Realizado', data:realData, borderColor:TEAL, backgroundColor:'rgba(0,201,167,0.07)',
+          fill:true, tension:0.4, pointRadius:2, pointHoverRadius:5, borderWidth:2 },
+        { label:'Previsto', data:prevData, borderColor:ORANGE, backgroundColor:'rgba(255,179,71,0.07)',
+          fill:true, tension:0.3, borderDash:[5,4], pointRadius:3, pointHoverRadius:5, borderWidth:2 }
+      ]
+    },
+    options: ctxCfg({ plugins: { legend:{ display:true, labels:{color:'#8B7AAF',font:{size:11},boxWidth:10} } } })
+  });
+})();
+
+// CHART CEO PREV BAR
+(function(){
+  new Chart(document.getElementById('chart-prev-bar'),{
+    type:'bar',
+    data:{
+      labels:D.previsao.map(p=>prevMeses[p.mes]||p.mes),
+      datasets:[{
+        label:'Receita Prevista',data:D.previsao.map(p=>p.receita_prevista),
+        backgroundColor:['rgba(0,201,167,0.7)','rgba(107,63,160,0.7)','rgba(255,179,71,0.7)'],
+        borderRadius:6, borderWidth:0
+      }]
+    },
+    options:ctxCfg({plugins:{legend:{display:false}}})
+  });
+})();
+
+// CHART TRIMESTRE
+(function(){
+  const qtrs = ['Q1','Q2','Q3','Q4'];
+  const years = ['2022','2023','2024'];
+  const colors = ['rgba(0,201,167,0.75)','rgba(107,63,160,0.75)','rgba(255,179,71,0.75)'];
+  const datasets = years.map((y,i)=>({
+    label:y,
+    data: qtrs.map(q => {
+      const f = D.trimestre.find(t=>t.trimestre===q+'/'+y);
+      return f ? f.valor_pedido : 0;
+    }),
+    backgroundColor:colors[i], borderRadius:6, borderWidth:0
+  }));
+  new Chart(document.getElementById('chart-trimestre'),{
+    type:'bar', data:{labels:qtrs, datasets},
+    options:ctxCfg({plugins:{legend:{display:true,labels:{color:'#8B7AAF',font:{size:11},boxWidth:10}}}})
+  });
+})();
+
+// CHART CANAL CEO
+(function(){
+  new Chart(document.getElementById('chart-canal'),{
+    type:'bar',
+    data:{
+      labels:D.canal.map(c=>c.canal),
+      datasets:[{ label:'Receita', data:D.canal.map(c=>c.valor_pedido),
+        backgroundColor:[TEAL+'BB',PURPLE+'BB','rgba(155,109,200,0.7)',ORANGE+'BB'],
+        borderRadius:8, borderWidth:0 }]
+    },
+    options:ctxCfg({plugins:{legend:{display:false}},indexAxis:'y',scales:{
+      x:{...CHART_DEFAULTS.scales.x, ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)}},
+      y:{ticks:{color:'#8B7AAF',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+    }})
+  });
+})();
+
+// ══════════════════════════════════════════════════════
+// PAGE 2 CHARTS
+// ══════════════════════════════════════════════════════
+(function(){
+  const segColors = [TEAL,RED,ORANGE,PURPLE,PALE,'#7AF0DA','#FF9AB5'];
+  new Chart(document.getElementById('chart-donut'),{
+    type:'doughnut',
+    data:{
+      labels:D.segmentos.map(s=>s.segmento),
+      datasets:[{data:D.segmentos.map(s=>s.count),
+        backgroundColor:segColors, borderColor:'#1A0D35', borderWidth:2, hoverOffset:8 }]
+    },
+    options:{responsive:true,plugins:{
+      legend:{position:'right',labels:{color:'#8B7AAF',font:{size:11},boxWidth:10,padding:8}},
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip, callbacks:{label:ctx=>`${ctx.label}: ${NUM(ctx.raw)}`}}
+    },cutout:'65%'}
+  });
+
+  // Canal H
+  new Chart(document.getElementById('chart-canal-h'),{
+    type:'bar',
+    data:{labels:D.canal.map(c=>c.canal),datasets:[{
+      label:'Receita',data:D.canal.map(c=>c.valor_pedido),
+      backgroundColor:[TEAL+'AA',PURPLE+'AA',PALE+'AA',ORANGE+'AA'],
+      borderRadius:6, borderWidth:0
+    }]},
+    options:ctxCfg({indexAxis:'y',plugins:{legend:{display:false}},scales:{
+      x:{...CHART_DEFAULTS.scales.x,ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)}},
+      y:{ticks:{color:'#8B7AAF',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+    }})
+  });
+
+  // Faixa valor
+  const faixaOrder = ["Até R$200","R$201-500","R$501-1000","R$1001-2000","R$2001-5000","Acima R$5000"];
+  const faixaSorted = faixaOrder.map(f=>D.faixa.find(x=>x.faixa===f)||{faixa:f,qtd:0});
+  new Chart(document.getElementById('chart-faixa'),{
+    type:'bar',
+    data:{labels:faixaSorted.map(f=>f.faixa),datasets:[{
+      label:'Pedidos',data:faixaSorted.map(f=>f.qtd),
+      backgroundColor:faixaSorted.map((_,i)=>`hsl(${160+i*15},${60+i*3}%,${40+i*5}%)`),
+      borderRadius:6, borderWidth:0
+    }]},
+    options:ctxCfg({plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#8B7AAF',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{ticks:{color:'#8B7AAF',font:{size:10},callback:v=>NUM(v)},grid:{color:'rgba(255,255,255,0.06)'}}
+    }})
+  });
+
+  // Cupom
+  new Chart(document.getElementById('chart-cupom'),{
+    type:'doughnut',
+    data:{labels:D.cupom.map(c=>c.tipo),datasets:[{
+      data:D.cupom.map(c=>c.qtd),
+      backgroundColor:[TEAL+'BB',PURPLE+'BB',ORANGE+'BB',PALE+'BB',RED+'BB'],
+      borderColor:'#1A0D35', borderWidth:2, hoverOffset:6
+    }]},
+    options:{responsive:true,plugins:{
+      legend:{position:'right',labels:{color:'#8B7AAF',font:{size:10},boxWidth:8,padding:6}},
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip}
+    },cutout:'55%'}
+  });
+
+  // Top Clientes Table
+  const tbl = document.getElementById('tbl-clientes');
+  tbl.innerHTML = `<thead><tr><th>#</th><th>Cliente</th><th>Segmento</th><th>Frequência</th><th>Receita Total</th><th>Ticket Médio</th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  D.top_clientes.forEach((c,i)=>{
+    const seg = c.segmento.replace(' ','_');
+    tbody.innerHTML += `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:600">${c.nome_cliente}</td>
+      <td><span class="seg-badge seg-${seg}">${c.segmento}</span></td>
+      <td>${c.frequencia}x</td>
+      <td style="color:var(--teal);font-weight:700">${BRL2(c.monetario)}</td>
+      <td>${BRL2(c.ticket_medio)}</td>
+    </tr>`;
+  });
+  tbl.appendChild(tbody);
+})();
+
+// ══════════════════════════════════════════════════════
+// PAGE 3 CHARTS
+// ══════════════════════════════════════════════════════
+(function(){
+  // Ranking horizontal
+  const rankColors = D.vendedores_rank.map((_,i)=>
+    i>=12?TEAL+'EE':i>=9?TEAL+'99':i>=6?PALE+'99':PURPLE+'99'
+  );
+  new Chart(document.getElementById('chart-ranking'),{
+    type:'bar',
+    data:{
+      labels:D.vendedores_rank.map(v=>v.vendedor),
+      datasets:[{label:'Receita Total',data:D.vendedores_rank.map(v=>v.total_vendas),
+        backgroundColor:rankColors, borderRadius:6, borderWidth:0}]
+    },
+    options:ctxCfg({indexAxis:'y',plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)},grid:{color:'rgba(255,255,255,0.06)'}},
+      y:{ticks:{color:'#F0EAF9',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}
+    }})
+  });
+
+  // Scatter
+  new Chart(document.getElementById('chart-scatter'),{
+    type:'bubble',
+    data:{datasets:[{
+      label:'Vendedoras',
+      data:D.scatter.map(v=>({x:v.qtd_pedidos,y:v.ticket_medio,r:v.total_vendas/20000,label:v.vendedor})),
+      backgroundColor:TEAL+'55', borderColor:TEAL, borderWidth:1.5
+    }]},
+    options:{responsive:true,plugins:{
+      legend:{display:false},
+      tooltip:{...CHART_DEFAULTS.plugins.tooltip, callbacks:{
+        label:ctx=>`${ctx.raw.label} — Pedidos:${ctx.raw.x} Ticket:${BRL(ctx.raw.y)}`
+      }}
+    },scales:{
+      x:{title:{display:true,text:'Qtd Pedidos',color:'#8B7AAF',font:{size:10}},ticks:{color:'#8B7AAF',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{title:{display:true,text:'Ticket Médio (R$)',color:'#8B7AAF',font:{size:10}},ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)},grid:{color:'rgba(255,255,255,0.06)'}}
+    }}
+  });
+
+  // Top 5 evolução
+  const top5Colors = [TEAL, ORANGE, PALE, RED, '#7AF0DA'];
+  const meses = [...new Set(D.top5_evo.map(r=>r.ano_mes))].sort();
+  const datasets5 = D.top5_names.map((name,i)=>({
+    label:name,
+    data:meses.map(m=>{const f=D.top5_evo.find(r=>r.ano_mes===m&&r.vendedor===name);return f?f.valor_pedido:null;}),
+    borderColor:top5Colors[i], backgroundColor:top5Colors[i]+'22',
+    tension:0.4, fill:false, pointRadius:2, borderWidth:2, spanGaps:true
+  }));
+  new Chart(document.getElementById('chart-top5'),{
+    type:'line',
+    data:{labels:meses, datasets:datasets5},
+    options:ctxCfg({scales:{
+      x:{ticks:{color:'#8B7AAF',font:{size:9},maxTicksLimit:12},grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)},grid:{color:'rgba(255,255,255,0.06)'}}
+    }})
+  });
+
+  // Legend top5
+  const legDiv = document.getElementById('top5-legend');
+  D.top5_names.forEach((n,i)=>{
+    legDiv.innerHTML+=`<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${top5Colors[i]}">
+      <span style="width:12px;height:2px;background:${top5Colors[i]};display:inline-block;border-radius:2px"></span>${n}</span>`;
+  });
+
+  // Tabela vendedores
+  const tbl = document.getElementById('tbl-vendedores');
+  tbl.innerHTML=`<thead><tr><th>#</th><th>Vendedora</th><th>Receita Total</th><th>Pedidos</th><th>Ticket Médio</th><th>Clientes</th><th>Ped/Cliente</th></tr></thead>`;
+  const tbody=document.createElement('tbody');
+  D.dim_vend_all.forEach((v,i)=>{
+    const pct=v.total_vendas/D.dim_vend_all[0].total_vendas*100;
+    tbody.innerHTML+=`<tr>
+      <td style="color:${i<3?'var(--teal)':'var(--muted)'};font-weight:700">#${i+1}</td>
+      <td style="font-weight:600">${v.vendedor}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <span style="color:var(--teal);font-weight:700">${BRL2(v.total_vendas)}</span>
+        <div style="width:60px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:var(--teal);border-radius:2px"></div></div>
+      </div></td>
+      <td>${NUM(v.qtd_pedidos)}</td>
+      <td>${BRL2(v.ticket_medio)}</td>
+      <td>${NUM(v.clientes_atendidos)}</td>
+      <td>${v.pedidos_por_cliente}</td>
+    </tr>`;
+  });
+  tbl.appendChild(tbody);
+})();
+
+// ══════════════════════════════════════════════════════
+// PAGE 4: VENDEDOR SLICER
+// ══════════════════════════════════════════════════════
+let vendChart = null;
+let selectedVend = D.dim_vend_all[0].vendedor;
+
+function buildSlicer() {
+  const div = document.getElementById('vend-slicer');
+  D.dim_vend_all.forEach(v=>{
+    const btn = document.createElement('button');
+    btn.className = 'slicer-btn' + (v.vendedor===selectedVend?' active':'');
+    btn.textContent = v.vendedor;
+    btn.onclick=()=>{ selectedVend=v.vendedor; updateVendedor(); };
+    div.appendChild(btn);
+  });
+}
+
+function updateVendedor() {
+  const v = D.dim_vend_all.find(x=>x.vendedor===selectedVend);
+  const rank = D.dim_vend_all.findIndex(x=>x.vendedor===selectedVend)+1;
+  const mediaEquipe = D.kpis.receita_total/D.kpis.vendedores;
+
+  // Profile
+  document.getElementById('vend-avatar').textContent = selectedVend[0];
+  document.getElementById('vend-pname').textContent = selectedVend;
+  document.getElementById('vend-pmeta').textContent = `${NUM(v.qtd_pedidos)} pedidos · ${NUM(v.clientes_atendidos)} clientes`;
+  document.getElementById('vend-prank').textContent = '#'+rank;
+
+  // KPIs
+  document.getElementById('vd-receita').textContent = BRL(v.total_vendas);
+  document.getElementById('vd-pedidos').textContent = NUM(v.qtd_pedidos);
+  document.getElementById('vd-ticket').textContent = BRL(v.ticket_medio);
+  document.getElementById('vd-clientes').textContent = NUM(v.clientes_atendidos);
+
+  // Slicer highlight
+  document.querySelectorAll('.slicer-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent===selectedVend);
+  });
+
+  // Gauge
+  const pct = Math.min(v.total_vendas/mediaEquipe*100,200);
+  const pctBar = Math.min(pct/2,100);
+  document.getElementById('vend-gauge').innerHTML = `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Minhas Vendas</div>
+    <div class="gauge-val">${BRL(v.total_vendas)}</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">Média da equipe: ${BRL(Math.round(mediaEquipe))}</div>
+    <div class="gauge-bar-bg"><div class="gauge-bar" style="width:${pctBar}%"></div></div>
+    <div style="font-size:12px;margin-top:8px;color:${pct>=100?'var(--teal)':'var(--orange)'}">
+      ${pct>=100?'✅':'⚠️'} ${pct.toFixed(0)}% da média da equipe
+    </div>
+    <div style="margin-top:16px;font-size:13px;font-weight:700;color:var(--white)">Ranking: <span style="color:var(--teal)">#${rank} de ${D.dim_vend_all.length}</span></div>`;
+
+  // Top clientes placeholder
+  document.getElementById('vend-top-badge').textContent = selectedVend;
+  document.getElementById('vend-top-list').innerHTML = `
+    <div style="font-size:12px;color:var(--muted);padding:8px 0">
+      Top clientes desta vendedora disponíveis nos dados de origem.<br>
+      Conecte ao Power BI para filtrar por vendedor individualmente.
+    </div>`;
+
+  // Linha evolução
+  const meses = [...new Set(D.top5_evo.map(r=>r.ano_mes))].sort();
+  const vendData = meses.map(m=>{
+    const f = D.top5_evo.find(r=>r.ano_mes===m && r.vendedor===selectedVend);
+    return f ? f.valor_pedido : null;
+  });
+  const vendInTop5 = D.top5_names.includes(selectedVend);
+  const ctx = document.getElementById('chart-vend-linha').getContext('2d');
+  if(vendChart) vendChart.destroy();
+
+  if(vendInTop5) {
+    vendChart = new Chart(ctx,{
+      type:'line',
+      data:{labels:meses,datasets:[{
+        label:selectedVend, data:vendData,
+        borderColor:TEAL, backgroundColor:'rgba(0,201,167,0.08)',
+        fill:true, tension:0.4, pointRadius:3, borderWidth:2, spanGaps:true
+      }]},
+      options:ctxCfg({plugins:{legend:{display:false}}})
+    });
+  } else {
+    const avgData = meses.map(m=>{
+      const found = D.top5_evo.filter(r=>r.ano_mes===m);
+      return found.length ? found.reduce((s,r)=>s+r.valor_pedido,0)/found.length : null;
+    });
+    vendChart = new Chart(ctx,{
+      type:'line',
+      data:{labels:meses,datasets:[{
+        label:'Média Top5', data:avgData,
+        borderColor:PURPLE, backgroundColor:'rgba(107,63,160,0.08)',
+        fill:true, tension:0.4, pointRadius:2, borderWidth:2, borderDash:[4,3], spanGaps:true
+      }]},
+      options:ctxCfg({plugins:{legend:{display:false}},scales:{
+        x:{ticks:{color:'#8B7AAF',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#8B7AAF',font:{size:10},callback:v=>BRL(v)},grid:{color:'rgba(255,255,255,0.06)'}}
+      }})
+    });
+  }
+}
+
+buildSlicer();
+updateVendedor();
+
+// ══════════════════════════════════════════════════════
+// PAGE 5: PREDITIVO
+// ══════════════════════════════════════════════════════
+(function(){
+  const allLabels=[...D.serie_real.map(r=>r.ano_mes),...D.serie_prev.slice(1).map(r=>r.ano_mes)];
+  const realData=allLabels.map(l=>{const f=D.serie_real.find(r=>r.ano_mes===l);return f?f.receita_total:null;});
+  const prevData=allLabels.map(l=>{const f=D.serie_prev.find(r=>r.ano_mes===l);return f?f.receita_total:null;});
+
+  new Chart(document.getElementById('chart-pred-linha'),{
+    type:'line',
+    data:{labels:allLabels,datasets:[
+      {label:'Realizado',data:realData,borderColor:TEAL,backgroundColor:'rgba(0,201,167,0.06)',fill:true,tension:0.4,pointRadius:2,borderWidth:2},
+      {label:'Previsto SARIMA',data:prevData,borderColor:ORANGE,backgroundColor:'rgba(255,179,71,0.06)',fill:true,tension:0.3,borderDash:[6,4],pointRadius:4,pointBackgroundColor:ORANGE,borderWidth:2.5}
+    ]},
+    options:ctxCfg({plugins:{legend:{display:true,labels:{color:'#8B7AAF',font:{size:11},boxWidth:10}}}})
+  });
+
+  // Modelos list
+  const maxMape = Math.max(...D.modelos.map(m=>m['MAPE_%']));
+  const modDiv = document.getElementById('mod-list');
+  D.modelos.forEach((m,i)=>{
+    const cls = i===0?'mod-best':i===1?'mod-ok':'mod-bad';
+    const barW = (m['MAPE_%']/maxMape*100).toFixed(0);
+    modDiv.innerHTML+=`<div class="mod-row">
+      <div>
+        <div class="mod-name">${m.modelo} ${i===0?'<span class="mod-tag">✓ Melhor</span>':''}</div>
+        <div style="font-size:11px;color:var(--muted)">MAE R$ ${NUM(m.MAE)} · RMSE R$ ${NUM(m.RMSE)}</div>
+        <div class="mod-bar-bg" style="margin-top:6px"><div class="mod-bar" style="width:${barW}%;background:${i===0?TEAL:i===1?ORANGE:RED}"></div></div>
+      </div>
+      <div class="mod-mape ${cls}">${m['MAPE_%']}%</div>
+    </div>`;
+  });
+
+  // MAPE bar
+  new Chart(document.getElementById('chart-mape'),{
+    type:'bar',
+    data:{
+      labels:D.modelos.map(m=>m.modelo),
+      datasets:[{label:'MAPE %',data:D.modelos.map(m=>m['MAPE_%']),
+        backgroundColor:[TEAL+'CC',ORANGE+'CC',RED+'CC'],borderRadius:8,borderWidth:0}]
+    },
+    options:ctxCfg({plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#8B7AAF',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+      y:{ticks:{color:'#8B7AAF',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.06)'}}
+    }})
+  });
+})();
+ 
+ // 1. Coloque aqui a função assíncrona para carregar o JSON
+        async function carregarDados() {
+            try {
+                const response = await fetch('./dados_dashboard.json');
+                const D = await response.json();
+                
+                // 2. Chame suas funções de inicialização aqui dentro
+                // Exemplo: inicializarKPIs(D);
+                // Exemplo: inicializarGraficos(D);
+                
+                console.log("Dados carregados com sucesso!");
+            } catch (error) {
+                console.error("Erro ao carregar:", error);
+            }
+        }
+
+        // 3. Execute a função assim que a página carregar
+        document.addEventListener('DOMContentLoaded', carregarDados);
+</script>
+</body>
+</html>
