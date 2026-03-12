@@ -26,15 +26,21 @@ jobs:
         run: python pipeline.py
 
       - name: Enviar mudanças de volta ao repositório
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Listando arquivos na pasta:"
+          ls -R
+          
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
-          git add dados_dashboard.json
           
-          # Verifica se há algo para commitar
-          if git diff-index --quiet HEAD --; then
-            echo "Nenhuma mudança para commitar."
-          else
+          # Tenta adicionar o arquivo. Se ele estiver em outra pasta, o Git vai te dizer onde.
+          git add dados_dashboard.json || echo "Arquivo dados_dashboard.json não encontrado na raiz!"
+          
+          if [ -n "$(git status --porcelain)" ]; then
             git commit -m "Automação: Atualizando dados do dashboard"
-            git push origin main
+            git push origin HEAD:main
+          else
+            echo "Nenhuma mudança para commitar."
           fi
