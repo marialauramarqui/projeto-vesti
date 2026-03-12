@@ -6,7 +6,7 @@ Executa tratamento, modelo preditivo e exporta CSVs + JSON para o dashboard.
 
 import pandas as pd
 import numpy as np
-import json
+import gzip
 import warnings
 import os
 import sys
@@ -37,12 +37,17 @@ logging.basicConfig(
 log = logging.getLogger("vesti-pipeline")
 
 # --- FUNÇÕES DE TRATAMENTO ---
+
 def carregar_dados():
     log.info("Carregando dados brutos...")
     erp_raw = pd.read_csv(os.path.join(BASE_DIR, "pedido_erp.csv"), sep=";", quotechar='"')
     crm_raw = pd.read_csv(os.path.join(BASE_DIR, "clientes_crm.csv"), sep=";")
-    with open(os.path.join(BASE_DIR, "pedido_ecom.json"), "r", encoding="utf-8") as f:
+    
+    # Lendo o arquivo compactado (GZIP)
+    caminho_ecom = os.path.join(BASE_DIR, "pedido_ecom.json.gz")
+    with gzip.open(caminho_ecom, 'rt', encoding='utf-8') as f:
         ecom_json = json.load(f)
+        
     ecom_raw = pd.json_normalize(ecom_json["docs"])
     return erp_raw, ecom_raw, crm_raw
 

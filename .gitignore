@@ -28,4 +28,14 @@ Thumbs.db
 .claude/settings.local.json
 .aiox/install-log.txt
 
+# --- Regras para o Pipeline Vesti ---
 
+# 1. Ignora o arquivo JSON gigante para evitar erro de limite de 100MB
+pedido_ecom.json
+
+# 2. Força o envio do arquivo comprimido (que está abaixo de 100MB)
+!pedido_ecom.json.gz
+
+# 3. Opcional: Garante que os CSVs de dados também sejam versionados 
+# (remova o '*' se o seu .gitignore antigo estiver bloqueando eles)
+!*.csv
