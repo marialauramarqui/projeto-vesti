@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vesti — Projeto de Dados | Maria Laura Marqui</title>
+<meta name="description" content="Dashboard de gestao para a confeccao Vesti: analise de vendas, segmentacao RFM, modelo preditivo SARIMA e visoes por persona.">
+<style>
+:root {
+  --bg: #0F0820;
+  --bg2: #1A0D35;
+  --card: #1E0D38;
+  --purple: #4A1E6B;
+  --purple-mid: #6B3FA0;
+  --purple-light: #9B6DC8;
+  --teal: #00C9A7;
+  --teal-dark: #009F85;
+  --white: #F0EAF9;
+  --muted: #8B7AAF;
+  --border2: rgba(107,63,160,0.3);
+  --orange: #FFB347;
+  --red: #FF5A7E;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  line-height: 1.6;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40%; left: -20%;
+  width: 140%; height: 140%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(0,201,167,0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(107,63,160,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hero-logo {
+  width: 72px; height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--teal), var(--purple-mid));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 32px; color: #0F0820;
+  margin-bottom: 24px;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,201,167,0.3);
+}
+
+.hero h1 {
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  position: relative;
+}
+.hero h1 span { color: var(--teal); }
+
+.hero-sub {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--muted);
+  max-width: 600px;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+  color: #0F0820;
+  text-decoration: none;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  transition: all 0.3s;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0,201,167,0.3);
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,201,167,0.45);
+}
+.hero-cta svg { width: 20px; height: 20px; }
+
+.hero-scroll {
+  position: absolute;
+  bottom: 32px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  animation: bounce 2s infinite;
+}
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
+/* ── SECTION ── */
+section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title::before {
+  content: '';
+  width: 4px; height: 28px;
+  border-radius: 2px;
+  background: var(--teal);
+  display: inline-block;
+}
+.section-desc {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 40px;
+  max-width: 700px;
+}
+
+/* ── KPI STRIP ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 60px;
+}
+.kpi-item {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-item::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--teal), var(--purple-mid));
+}
+.kpi-item .icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+.kpi-item .val {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.kpi-item .lbl {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── PERSONAS GRID ── */
+.personas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 60px;
+}
+.persona-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 24px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.persona-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--teal);
+}
+.persona-card .emoji { font-size: 32px; margin-bottom: 12px; }
+.persona-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.persona-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── TECH STACK ── */
+.tech-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 60px;
+}
+.tech-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(0,201,167,0.08);
+  border: 1px solid rgba(0,201,167,0.2);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+/* ── FEATURES ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 60px;
+}
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 24px;
+}
+.feature-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.feature-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── CTA FINAL ── */
+.cta-section {
+  text-align: center;
+  padding: 80px 24px 100px;
+}
+.cta-section h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+.cta-section p {
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 13px;
+}
+footer a { color: var(--teal); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .personas-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- HERO                                    -->
+<!-- ═══════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-logo">V</div>
+  <h1>Vesti <span>Dashboard</span></h1>
+  <p class="hero-sub">
+    Analise de dados integrada para uma confeccao de moda: loja fisica + e-commerce em um unico painel interativo com modelo preditivo SARIMA.
+  </p>
+  <a href="dashboard_desafio.html" class="hero-cta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/>
+    </svg>
+    Abrir Dashboard
+  </a>
+  <div class="hero-scroll">scroll para saber mais</div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- NUMEROS                                 -->
+<!-- ═══════════════════════════════════════ -->
+<section>
+  <div class="section-title">Numeros do Projeto</div>
+  <p class="section-desc">Dados consolidados de outubro/2016 a novembro/2024, unificando ERP, e-commerce e CRM.</p>
+
+  <div class="kpi-strip">
+    <div class="kpi-item">
+      <div class="icon">💰</div>
+      <div class="val" style="color:var(--teal)">R$ 11,2M</div>
+      <div class="lbl">Receita Analisada</div>
+    </div>
+    <div class="kpi-item">
+      <div class="icon">📦</div>
+      <div class="val">12.222</div>
+      <div class="lbl">Pedidos Processados</div>
+    </div>
+    <div class="kpi-item">
+      <div class="icon">👥</div>
+      <div class="val">3.479</div>
+      <div class="lbl">Clientes Ativos</div>
+    </div>
+    <div class="kpi-item">
+      <div class="icon">🎯</div>
+      <div class="val" style="color:var(--teal)">10,5%</div>
+      <div class="lbl">MAPE do Modelo</div>
+    </div>
+    <div class="kpi-item">
+      <div class="icon">🏷️</div>
+      <div class="val">R$ 915</div>
+      <div class="lbl">Ticket Medio</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PERSONAS                                -->
+<!-- ═══════════════════════════════════════ -->
+<section>
+  <div class="section-title">Visoes por Persona</div>
+  <p class="section-desc">Cada perfil de usuario acessa os indicadores mais relevantes para sua funcao.</p>
+
+  <div class="personas-grid">
+    <div class="persona-card">
+      <div class="emoji">📊</div>
+      <h3>Visao CEO</h3>
+      <p>Receita total, ticket medio, variacao MoM, previsao SARIMA para os proximos 3 meses e receita por trimestre e canal.</p>
+    </div>
+    <div class="persona-card">
+      <div class="emoji">🎯</div>
+      <h3>Marketing</h3>
+      <p>Segmentacao RFM com 7 perfis de cliente, analise de canais, faixa de valor dos pedidos e taxa de uso de cupom.</p>
+    </div>
+    <div class="persona-card">
+      <div class="emoji">🏆</div>
+      <h3>Performance</h3>
+      <p>Ranking de vendedoras, dispersao pedidos x ticket, evolucao mensal das top 5 e tabela completa da equipe.</p>
+    </div>
+    <div class="persona-card">
+      <div class="emoji">👤</div>
+      <h3>Vendedor</h3>
+      <p>Painel individual com filtro por nome: minhas vendas, meus clientes, minha posicao no ranking e evolucao mensal.</p>
+    </div>
+    <div class="persona-card">
+      <div class="emoji">🔮</div>
+      <h3>Modelo SARIMA</h3>
+      <p>Serie historica + previsao, comparacao de 3 modelos (SARIMA, Holt-Winters, Regressao Linear) e metricas de erro.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- O QUE FOI FEITO                         -->
+<!-- ═══════════════════════════════════════ -->
+<section>
+  <div class="section-title">O que foi feito</div>
+  <p class="section-desc">Do dado bruto ao dashboard interativo, passando por tratamento, modelagem e automacao.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <h3>🧹 Tratamento de Dados</h3>
+      <p>Limpeza de dados de teste, deduplicacao de clientes, padronizacao de nomes e valores, unificacao de 3 fontes com 99,98% de match entre pedidos e clientes.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📐 Modelagem Star Schema</h3>
+      <p>Tabela fato de vendas com dimensoes de clientes, vendedores e tempo. Extensivel para novas dimensoes sem alterar a estrutura existente.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🧠 Segmentacao RFM</h3>
+      <p>Classificacao de clientes em 7 segmentos (VIP, Leal, Regular, Novo Promissor, Em Risco, Perdendo VIP, Inativo) usando rank percentual.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📈 Modelo Preditivo</h3>
+      <p>SARIMA(1,1,1)(1,1,1,12) selecionado entre 3 modelos, com MAPE de 10,5%. Captura sazonalidade anual e gera previsao para 3 meses.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🤖 Automacao Diaria</h3>
+      <p>GitHub Actions roda o pipeline Python todo dia as 08h (BRT), retreina o modelo e atualiza o dashboard automaticamente.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🌐 Dashboard Web</h3>
+      <p>HTML + Chart.js hospedado no GitHub Pages. Acessivel por qualquer navegador, sem instalacao, responsivo e com tema escuro.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TECH STACK                              -->
+<!-- ═══════════════════════════════════════ -->
+<section>
+  <div class="section-title">Stack Tecnico</div>
+  <p class="section-desc">Ferramentas utilizadas no projeto.</p>
+
+  <div class="tech-row">
+    <span class="tech-tag">🐍 Python</span>
+    <span class="tech-tag">📊 Pandas</span>
+    <span class="tech-tag">📉 Statsmodels</span>
+    <span class="tech-tag">🤖 Scikit-learn</span>
+    <span class="tech-tag">📓 Jupyter Notebook</span>
+    <span class="tech-tag">🌐 HTML / CSS</span>
+    <span class="tech-tag">📈 Chart.js</span>
+    <span class="tech-tag">⚙️ GitHub Actions</span>
+    <span class="tech-tag">🚀 GitHub Pages</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- CTA FINAL                               -->
+<!-- ═══════════════════════════════════════ -->
+<section class="cta-section">
+  <h2>Explore os dados</h2>
+  <p>O dashboard e interativo — navegue entre as 5 visoes, filtre por vendedora e explore os indicadores.</p>
+  <a href="dashboard_desafio.html" class="hero-cta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/>
+    </svg>
+    Abrir Dashboard
+  </a>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- FOOTER                                  -->
+<!-- ═══════════════════════════════════════ -->
+<footer>
+  <p>Projeto desenvolvido por <strong>Maria Laura Marqui</strong> | Novembro 2024</p>
+  <p style="margin-top:6px">Desafio Vesti — Analise de Dados & Dashboard Interativo</p>
+</footer>
+
+</body>
+</html>
