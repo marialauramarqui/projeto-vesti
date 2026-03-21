@@ -756,7 +756,7 @@
     {
       "mes": "2024-11",
       "receita_prevista": 249643.95,
-      "receita_min": -28968.21,
+      "receita_min": -28968.2,
       "receita_max": 528256.1,
       "pedidos_previstos": 181
     },
@@ -777,8 +777,8 @@
     },
     {
       "modelo": "Holt-Winters",
-      "MAE": 29156,
-      "RMSE": 39085,
+      "MAE": 29173,
+      "RMSE": 39121,
       "MAPE_%": 10.7
     },
     {
